@@ -134,6 +134,7 @@ def status_func(status_queue):
         print(status)
         sys.stdout.flush()
 
+
 def notify_func(notify,
                 submit_lock,
                 submitted_jobs,
@@ -205,7 +206,7 @@ def main():
                       help="csv job file", metavar="FILE")
 
     parser.add_option("-d", "--dir", dest="outdir",
-                      help="directory of output", metavar="DIR")
+                      help="download directory", metavar="DIR")
 
     (options, args) = parser.parse_args()
 
@@ -216,6 +217,21 @@ def main():
     if options.outdir:
         outdir = options.outdir
 
+    host = os.environ.get('ASVO_HOST', None)
+    if not host:
+        raise Exception('ASVO_HOST env variable not defined')
+
+    port = os.environ.get('ASVO_PORT', None)
+    if not port:
+        raise Exception('ASVO_PORT env variable not defined')
+
+    user = os.environ.get('ASVO_USER', None)
+    if not user:
+        raise Exception('ASVO_USER env variable not defined')
+
+    passwd = os.environ.get('ASVO_PASS', None)
+    if not passwd:
+        raise Exception('ASVO_PASS env variable not defined')
 
     status_queue = Queue.Queue()
     status_thread = Thread(target=status_func, args=(status_queue,))
@@ -228,10 +244,10 @@ def main():
 
     jobs_to_submit = parse_csv(options.csvfile)
 
-    params = (os.environ['ASVO_HOST'],
-              os.environ['ASVO_PORT'],
-              os.environ['ASVO_USER'],
-              os.environ['ASVO_PASS'])
+    params = (host,
+              port,
+              user,
+              passwd)
 
     session = Session.login(*params)
     submitted_jobs = submit_jobs(session, jobs_to_submit, status_queue)
