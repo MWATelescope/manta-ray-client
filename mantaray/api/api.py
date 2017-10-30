@@ -1,8 +1,12 @@
 import os
 import ssl
 import json
-import urllib
 import requests
+
+try:
+    from urllib.parse import urlencode
+except:
+    from urllib import urlencode
 
 from websocket import create_connection
 from requests.auth import HTTPBasicAuth
@@ -146,7 +150,7 @@ class Session(object):
         url = "https://{0}:{1}/api/download".format(self.host, self.port)
         params = {'file_name': filename, 'job_id': job_id}
         with self.session.get(url=url,
-                              params=urllib.urlencode(params),
+                              params=urlencode(params),
                               stream=True,
                               verify=self.verify) as r:
             r.raise_for_status()

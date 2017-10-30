@@ -116,6 +116,7 @@ def download_func(submit_lock,
                         status_queue.put(msg)
                         continue
 
+                status_queue.put('Downloading. id: %s file: %s' % (job_id, prod[0]))
                 session.download_file_product(job_id, prod[0], output_dir)
                 status_queue.put(msg)
 
@@ -173,7 +174,7 @@ def notify_func(notify,
                     status_queue.put("%s: %s" % ('Processing', msg))
 
                 elif job_state == 2:
-                    status_queue.put("%s: %s" % ('Downloading', msg))
+                    status_queue.put("%s: %s" % ('Queueing for Download', msg))
                     download_queue.put(item)
 
                 elif job_state == 3:
