@@ -1,8 +1,11 @@
 import os
 import csv
 import sys
-import Queue
 import requests
+try:
+    from queue import Queue, Empty
+except:
+    from queue import Queue, Empty
 
 from threading import Thread, RLock
 from optparse import OptionParser
@@ -233,13 +236,13 @@ def main():
     if not passwd:
         raise Exception('ASVO_PASS env variable not defined')
 
-    status_queue = Queue.Queue()
+    status_queue = Queue()
     status_thread = Thread(target=status_func, args=(status_queue,))
     status_thread.daemon = True
     status_thread.start()
 
-    download_queue = Queue.Queue()
-    result_queue = Queue.Queue()
+    download_queue = Queue()
+    result_queue = Queue()
     submit_lock = RLock()
 
     jobs_to_submit = parse_csv(options.csvfile)
@@ -287,7 +290,7 @@ def main():
             if not r:
                 raise Exception('Control connection lost, exiting')
             results.append(r)
-        except Queue.Empty:
+        except Empty:
             continue
 
     for _ in threads:
