@@ -5,7 +5,7 @@ import requests
 try:
     from queue import Queue, Empty
 except:
-    from queue import Queue, Empty
+    from Queue import Queue, Empty
 
 from threading import Thread, RLock
 from optparse import OptionParser
