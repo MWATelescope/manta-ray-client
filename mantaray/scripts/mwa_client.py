@@ -9,7 +9,7 @@ except:
 
 from threading import Thread, RLock
 from optparse import OptionParser
-
+from colorama import init, Fore
 from mantaray.api import Notify, Session
 
 
@@ -39,14 +39,37 @@ class ParseException(Exception):
 
 def parse_row(row):
     try:
-        if row[1] == 'c':
-            return ('submit_conversion_job',
-                    (row[0], row[2], row[3], row[4], row[5]))
-        elif row[1] == 'd':
-            return ('submit_download_job',
-                    (row[0], row[2]))
-        else:
-            raise ParseException('unknown type')
+        job_type = None
+        params = dict()
+        for cell in row:
+            cell = cell.replace(" ", "")
+            val = cell.split('=')
+
+            if len(val) != 2:
+                raise ParseException('invalid cell format, must be key=value')
+
+            key = val[0]
+            val = val[1]
+
+            if key is None or val is None:
+                raise ParseException('invalid cell format: None')
+
+            if key == 'job_type':
+                if val == 'c':
+                    job_type = 'submit_conversion_job_direct'
+                elif val == 'd':
+                    job_type = 'submit_download_job_direct'
+                else:
+                    raise ParseException('unknown job_type')
+            else:
+                params[key] = val
+
+        if job_type is None:
+            raise ParseException('job_type cell not defined')
+
+        # check parameters for each job type: create a validate function in api
+
+        return [job_type, params]
 
     except ParseException:
         raise
@@ -73,7 +96,7 @@ def submit_jobs(session, jobs, status_queue):
     submitted_jobs = []
     for job in jobs:
         func = getattr(session, job[0])
-        job_response = func(*job[1])
+        job_response = func(job[1])
         status_queue.put('Submitted job: %s ' % (job_response['job_id'],))
         submitted_jobs.append(job_response['job_id'])
 
@@ -107,8 +130,8 @@ def download_func(submit_lock,
 
         for prod in products:
             try:
-                msg = 'Download complete. id: %s file: %s' % \
-                      (job_id, prod[0])
+                msg = '%sDownload complete.%s id: %s file: %s' % \
+                      (Fore.GREEN, Fore.WHITE, job_id, prod[0])
 
                 file_path = "%s/%s" % (output_dir, prod[0])
                 if os.path.isfile(file_path):
@@ -116,7 +139,8 @@ def download_func(submit_lock,
                         status_queue.put(msg)
                         continue
 
-                status_queue.put('Downloading. id: %s file: %s' % (job_id, prod[0]))
+                status_queue.put('%sDownloading.%s id: %s file: %s size: %s bytes'
+                                 % (Fore.MAGENTA, Fore.WHITE, job_id, prod[0], prod[1]))
                 session.download_file_product(job_id, prod[0], output_dir)
                 status_queue.put(msg)
 
@@ -168,18 +192,21 @@ def notify_func(notify,
 
             if job_id in submitted_jobs:
                 if job_state == 0:
-                    status_queue.put("%s: %s" % ('Queued', msg))
+                    status_queue.put("%s%s%s: %s" %
+                                     (Fore.MAGENTA, 'Queued', Fore.WHITE, msg))
 
                 elif job_state == 1:
-                    status_queue.put("%s: %s" % ('Processing', msg))
+                    status_queue.put("%s%s%s: %s" %
+                                     (Fore.BLUE, 'Processing', Fore.WHITE, msg))
 
                 elif job_state == 2:
-                    status_queue.put("%s: %s" % ('Queueing for Download', msg))
+                    status_queue.put("%s%s%s: %s" %
+                                     (Fore.MAGENTA, 'Queueing for Download', Fore.WHITE, msg))
                     download_queue.put(item)
 
                 elif job_state == 3:
                     error_text = item['row']['error_text']
-                    msg = "%s: %s; %s" % ('Error', error_text, msg)
+                    msg = "%s%s%s: %s; %s" % (Fore.RED, 'Error', Fore.WHITE, error_text, msg)
                     result_queue.put(msg)
 
                     _remove_submitted(submit_lock,
@@ -196,7 +223,7 @@ def notify_func(notify,
 
                 elif job_state == 5:
                     # do not consider cancelled as an error
-                    msg = "%s: %s" % ('Cancelled', msg)
+                    msg = "%s%s%s: %s" % (Fore.RED, 'Cancelled', Fore.WHITE, msg)
                     status_queue.put(msg)
 
                     _remove_submitted(submit_lock,
@@ -205,6 +232,7 @@ def notify_func(notify,
 
 
 def main():
+    init(autoreset=True)
     parser = OptionParser()
     parser.add_option("-c", "--csv", dest="csvfile",
                       help="csv job file", metavar="FILE")
@@ -328,8 +356,8 @@ if __name__ == "__main__":
     try:
         main()
     except ParseException as e:
-        print('Invalid row: %s line num: %s' %
-              (e.row, e.line_num))
+        print('Error: %s, Line num: %s' %
+              (str(e), e.line_num))
         sys.exit(3)
 
     except requests.exceptions.HTTPError as re:

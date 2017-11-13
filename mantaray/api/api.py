@@ -39,7 +39,8 @@ class Notify(object):
               host,
               port,
               username,
-              password):
+              password,
+              sslopt={'cert_reqs': ssl.CERT_NONE}):
 
         session = requests.session()
         url = "https://{0}:{1}/api/login".format(host, port)
@@ -56,7 +57,7 @@ class Notify(object):
                                                         port)
         ws = create_connection(ws_url,
                                header={'Cookie': cookie_str},
-                               sslopt={'cert_reqs': ssl.CERT_NONE})
+                               sslopt=sslopt)
 
         return Notify(session, ws)
 
@@ -110,25 +111,35 @@ class Session(object):
                               time_res,
                               freq_res,
                               edge_width,
-                              conversion):
+                              conversion,
+                              flags=[]):
+        data = {'obs_id': obs_id,
+                'timeres': time_res,
+                'freqres': freq_res,
+                'edgewidth': edge_width,
+                'conversion': conversion}
+        data.update(dict.fromkeys(flags, 1))
+        return self.submit_conversion_job_direct(data)
+
+    def submit_conversion_job_direct(self, parameters):
         url = "https://{0}:{1}/api/conversion_job".format(self.host, self.port)
         with self.session.post(url,
-                              data={'obs_id': obs_id,
-                                    'timeres': time_res,
-                                    'freqres': freq_res,
-                                    'edgewidth': edge_width,
-                                    'conversion': conversion},
-                              verify=self.verify) as r:
+                               parameters,
+                               verify=self.verify) as r:
             r.raise_for_status()
             return r.json()
 
     def submit_download_job(self,
                             obs_id,
                             download_type):
+        data = {'obs_id': obs_id,
+                'download_type': download_type}
+        return self.submit_download_job_direct(data)
+
+    def submit_download_job_direct(self, parameters):
         url = "https://{0}:{1}/api/download_vis_job".format(self.host, self.port)
         with self.session.post(url,
-                               data={'obs_id': obs_id,
-                                     'download_type': download_type},
+                               parameters,
                                verify=self.verify) as r:
             r.raise_for_status()
             return r.json()
