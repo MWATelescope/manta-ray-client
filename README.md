@@ -18,10 +18,13 @@ The script will block until all the jobs have been downloaded or there is an err
 
 ## Job States
 
-Queued: Job has been submitted and is waiting to be processed. 
-Processing: Job is being processed. 
-Downloading: Job product is being downloaded. 
-Error: There was an error. 
+Each job submitted will transmission through the following states.
+
+* Queued: Job has been submitted and is waiting to be processed. 
+* Processing: Job is being processed. 
+* Downloading: Job product is being downloaded.
+* Download Compete: Product download has been completed.
+* Error: There was an error. 
 
 ### CSV Format
 
