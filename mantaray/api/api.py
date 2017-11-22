@@ -157,7 +157,12 @@ class Session(object):
                                verify=self.verify) as r:
             r.raise_for_status()
 
-    def download_file_product(self, job_id, filename, output_path):
+    def download_file_product(self,
+                              job_id,
+                              filename,
+                              output_path,
+                              chunk_size=16777216):
+
         url = "https://{0}:{1}/api/download".format(self.host, self.port)
         params = {'file_name': filename, 'job_id': job_id}
         with self.session.get(url=url,
@@ -173,7 +178,7 @@ class Session(object):
 
             full_output_path = '{0}/{1}'.format(output_path, filename)
             with open(full_output_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=16384):
+                for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:
                         f.write(chunk)
 
