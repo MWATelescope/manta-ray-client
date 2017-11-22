@@ -161,7 +161,7 @@ class Session(object):
                               job_id,
                               filename,
                               output_path,
-                              chunk_size=16777216):
+                              chunk_size=65536):
 
         url = "https://{0}:{1}/api/download".format(self.host, self.port)
         params = {'file_name': filename, 'job_id': job_id}
