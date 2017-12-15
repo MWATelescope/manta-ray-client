@@ -249,7 +249,7 @@ def main():
     if options.outdir:
         outdir = options.outdir
 
-    host = os.environ.get('ASVO_HOST', 'mwa-pawsey02.pawsey.org.au')
+    host = os.environ.get('ASVO_HOST', None)
     if not host:
         raise Exception('ASVO_HOST env variable not defined')
 

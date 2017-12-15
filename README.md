@@ -94,14 +94,13 @@ source env/bin/activate
 
 git clone https://github.com/ICRAR/manta-ray-client.git
 cd manta-ray-client
-pip install -r requirements.txt
+python setup.py install
 ```
 
 ## Running
 
 ```
-cd manta-ray-client
-python -m mantaray.scripts.mwa_client --csv=jobs.csv --dir=/tmp/
+mwa_job_client --csv=jobs.csv --dir=/tmp/
 ```
 
 ##### Help
