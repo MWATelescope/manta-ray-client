@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(name='mantaray-client',
       version='0.1.0',
-      packages=['mantaray'],
+      packages=find_packages(),
       install_requires=['requests',
                         'websocket_client',
                         'colorama'],
