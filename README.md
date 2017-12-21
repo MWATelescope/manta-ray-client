@@ -2,13 +2,13 @@
 
 ## Description
 
-Python API and helper scripts to interact with the [MWA ASVO](https://asvo.mwatelescope.org)
+Python API and helper scripts to interact with the [MWA ASVO](https://asvo.mwatelescope.org).
 
 ## Job Services
 
-There are two types of MWA jobs: 
-* Average, convert and download visibility data set using cotter.
-* Package and download a visibility data set. 
+There are two types of MWA ASVO jobs: 
+* Conversion: Average, convert and download visibility data set using cotter.
+* Visibility Download: Package and download a visibility data set. 
 
 ## Submit Jobs
 
@@ -30,7 +30,7 @@ Each job submitted will transition through the following states:
 
 Each row is a single job and each CSV element must be a key=value pair. 
 
-#### Cotter Job Options
+#### Conversion Job Options
 
 * obs_id=< integer >
 * job_type=c
@@ -61,7 +61,7 @@ To enable an option, set value to true i.e. norfi=true
 obs_id=1191828584, job_type=c, timeres=20, freqres=20, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
 ```
 
-#### Visibility Job Download Options
+#### Visibility Download Job Options
 
 * obs_id=< integer >
 * job_type=d
