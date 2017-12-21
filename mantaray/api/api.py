@@ -40,7 +40,7 @@ class Notify(object):
               port,
               username,
               password,
-              sslopt={'cert_reqs': ssl.CERT_NONE}):
+              sslopt={'cert_reqs': ssl.CERT_REQUIRED}):
 
         session = requests.session()
         url = "https://{0}:{1}/api/login".format(host, port)
