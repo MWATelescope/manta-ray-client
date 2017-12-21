@@ -7,5 +7,5 @@ setup(name='mantaray-client',
                         'websocket_client',
                         'colorama'],
       entry_points={'console_scripts': [
-          'mwa_job_client = mantaray.scripts.mwa_client:main']
+          'mwa_client = mantaray.scripts.mwa_client:main']
       })
