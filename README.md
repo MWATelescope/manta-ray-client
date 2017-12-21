@@ -2,7 +2,7 @@
 
 ## Description
 
-Python API and helper scripts to interact with the MWA archive. 
+Python API and helper scripts to interact with the [MWA ASVO](https://asvo.mwatelescope.org)
 
 ## Job Services
 
@@ -13,12 +13,12 @@ There are two types of MWA jobs:
 ## Submit Jobs
 
 Users can submit multiple jobs using a CSV file and `mwa_client.py`. 
-Once all the jobs have been processed the data will be automatically download.
+Once all the jobs have been processed the data will be automatically downloaded.
 The script will block until all the jobs have been downloaded or there is an error.
 
 ## Job States
 
-Each job submitted will transmission through the following states.
+Each job submitted will transition through the following states:
 
 * Queued: Job has been submitted and is waiting to be processed. 
 * Processing: Job is being processed. 
@@ -42,7 +42,7 @@ Each row is a single job and each CSV element must be a key=value pair.
   - UVFits: uvfits set.
 
 ##### Optional option
-To enable option set value to true i.e. norfi=true
+To enable an option, set value to true i.e. norfi=true
 
 * norfi: Disable RFI detection.
 * nostats: Disable collecting statistics.
@@ -61,7 +61,7 @@ To enable option set value to true i.e. norfi=true
 obs_id=1191828584, job_type=c, timeres=20, freqres=20, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
 ```
 
-#### Visibility JOb Download Options
+#### Visibility Job Download Options
 
 * obs_id=< integer >
 * job_type=d
