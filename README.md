@@ -100,7 +100,7 @@ python setup.py install
 ## Running
 
 ```
-mwa_job_client --csv=jobs.csv --dir=/tmp/
+mwa_client.py --csv=jobs.csv --dir=/tmp/
 ```
 
 ##### Help
