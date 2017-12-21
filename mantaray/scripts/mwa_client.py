@@ -249,7 +249,7 @@ def main():
     if options.outdir:
         outdir = options.outdir
 
-    host = os.environ.get('ASVO_HOST', None)
+    host = os.environ.get('ASVO_HOST', 'asvo.mwatelescope.org')
     if not host:
         raise Exception('ASVO_HOST env variable not defined')
 
