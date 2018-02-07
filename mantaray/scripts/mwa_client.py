@@ -1,7 +1,9 @@
 import os
+import ssl
 import csv
 import sys
 import requests
+
 try:
     from queue import Queue, Empty
 except:
@@ -82,6 +84,8 @@ def parse_csv(filename):
     with open(filename, 'rU') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
+            if not row:
+                continue
             try:
                 result.append(parse_row(row))
             except ParseException as e:
@@ -182,13 +186,15 @@ def notify_func(notify,
         job_params = item['row']['job_params']
 
         with submit_lock:
+            msg = 'Job id: %s type: %s params: %s' % (job_id, job_type, job_params)
+
             if action == 'DELETE':
+                status_queue.put("%s%s%s: %s" %
+                                 (Fore.RED, 'Deleted', Fore.WHITE, msg))
                 _remove_submitted(submit_lock,
                                   submitted_jobs,
                                   job_id)
                 continue
-
-            msg = 'Job id: %s type: %s params: %s' % (job_id, job_type, job_params)
 
             if job_id in submitted_jobs:
                 if job_state == 0:
@@ -231,8 +237,7 @@ def notify_func(notify,
                                       job_id)
 
 
-def main():
-    init(autoreset=True)
+def mwa_client():
     parser = OptionParser()
     parser.add_option("-c", "--csv", dest="csvfile",
                       help="csv job file", metavar="FILE")
@@ -265,6 +270,12 @@ def main():
     if not passwd:
         raise Exception('ASVO_PASS env variable not defined')
 
+    ssl_verify = os.environ.get("SSL_VERIFY", "1")
+    if ssl_verify == "1":
+        sslopt = {'cert_reqs': ssl.CERT_REQUIRED}
+    else:
+        sslopt = {'cert_reqs': ssl.CERT_NONE}
+
     status_queue = Queue()
     status_thread = Thread(target=status_func, args=(status_queue,))
     status_thread.daemon = True
@@ -281,10 +292,14 @@ def main():
               user,
               passwd)
 
+    status_queue.put("Connecting to ASVO")
     session = Session.login(*params)
+    status_queue.put("Connected to ASVO")
     submitted_jobs = submit_jobs(session, jobs_to_submit, status_queue)
 
-    notify = Notify.login(*params)
+    status_queue.put("Connecting to ASVO Notifier")
+    notify = Notify.login(*params, sslopt=sslopt)
+    status_queue.put("Connected to ASVO Notifier")
     notify_thread = Thread(target=notify_func, args=(notify,
                                                      submit_lock,
                                                      submitted_jobs,
@@ -352,18 +367,28 @@ def main():
     if results_len > 0:
         sys.exit(4)
 
-if __name__ == "__main__":
+
+def main():
+    init(autoreset=True)
+
     try:
-        main()
+        mwa_client()
     except ParseException as e:
         print('Error: %s, Line num: %s' %
               (str(e), e.line_num))
+        sys.stdout.flush()
         sys.exit(3)
 
     except requests.exceptions.HTTPError as re:
         print(re.response.text)
+        sys.stdout.flush()
         sys.exit(2)
 
     except Exception as exp:
         print(exp)
+        sys.stdout.flush()
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
