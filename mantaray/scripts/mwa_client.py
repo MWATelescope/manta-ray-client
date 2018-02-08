@@ -287,6 +287,9 @@ def mwa_client():
 
     jobs_to_submit = parse_csv(options.csvfile)
 
+    if len(jobs_to_submit) == 0:
+        raise Exception("No jobs to submit")
+
     params = (host,
               port,
               user,
