@@ -26,11 +26,11 @@ Each job submitted will transition through the following states:
 * Download Compete: Product download has been completed.
 * Error: There was an error. 
 
-### CSV Format
+## CSV Format
 
 Each row is a single job and each CSV element must be a key=value pair. 
 
-#### Conversion Job Options
+### Conversion Job Options
 
 * obs_id=< integer >
 * job_type=c
@@ -41,7 +41,7 @@ Each row is a single job and each CSV element must be a key=value pair.
   - ms: CASA measurement set. 
   - UVFits: uvfits set.
 
-##### Optional option
+#### Optional option
 To enable an option, set value to true i.e. norfi=true
 
 * norfi: Disable RFI detection.
@@ -61,7 +61,7 @@ To enable an option, set value to true i.e. norfi=true
 obs_id=1191828584, job_type=c, timeres=20, freqres=20, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
 ```
 
-#### Visibility Download Job Options
+### Visibility Download Job Options
 
 * obs_id=< integer >
 * job_type=d
@@ -100,7 +100,7 @@ python setup.py install
 ## Running
 
 ```
-mwa_client.py --csv=jobs.csv --dir=/tmp/
+mwa_client --csv=jobs.csv --dir=/tmp/
 ```
 
 ##### Help
