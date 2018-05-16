@@ -39,7 +39,7 @@ Each row is a single job and each CSV element must be a key=value pair.
 * edgewidth=< integer >
 * conversion=< ms || uvfits >
   - ms: CASA measurement set. 
-  - UVFits: uvfits set.
+  - uvfits: uvfits set.
 
 #### Optional option
 To enable an option, set value to true i.e. norfi=true
@@ -58,7 +58,7 @@ To enable an option, set value to true i.e. norfi=true
 #### Example
 
 ```
-obs_id=1191828584, job_type=c, timeres=20, freqres=20, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
+obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
 ```
 
 ### Visibility Download Job Options
@@ -72,8 +72,8 @@ obs_id=1191828584, job_type=c, timeres=20, freqres=20, edgewidth=80, conversion=
 #### Example
 
 ```
-obs_id=1191828584, job_type=d, download_type=vis
-obs_id=1191828528, job_type=d, download_type=vis_meta
+obs_id=1110103576, job_type=d, download_type=vis
+obs_id=1110105120, job_type=d, download_type=vis_meta
 ```
 
 ## Installation
@@ -83,7 +83,7 @@ You must have an account on the MWA ASVO portal.
 Set the credentials as environment variables in linux
 ```
 export ASVO_USER=<username>
-export ASVO_PASS=<password
+export ASVO_PASS=<password>
 ```
 
 ##### Code
