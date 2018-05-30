@@ -11,7 +11,7 @@ except:
 
 from threading import Thread, RLock
 from optparse import OptionParser
-from colorama import init, Fore
+from colorama import init, Fore, Style
 from mantaray.api import Notify, Session
 
 
@@ -86,6 +86,8 @@ def parse_csv(filename):
         for row in reader:
             if not row:
                 continue
+            if row[0].strip().startswith('#'):
+                continue
             try:
                 result.append(parse_row(row))
             except ParseException as e:
@@ -135,7 +137,7 @@ def download_func(submit_lock,
         for prod in products:
             try:
                 msg = '%sDownload complete.%s id: %s file: %s' % \
-                      (Fore.GREEN, Fore.WHITE, job_id, prod[0])
+                      (Fore.GREEN, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id, prod[0])
 
                 file_path = "%s/%s" % (output_dir, prod[0])
                 if os.path.isfile(file_path):
@@ -144,7 +146,7 @@ def download_func(submit_lock,
                         continue
 
                 status_queue.put('%sDownloading.%s id: %s file: %s size: %s bytes'
-                                 % (Fore.MAGENTA, Fore.WHITE, job_id, prod[0], prod[1]))
+                                 % (Fore.MAGENTA, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id, prod[0], prod[1]))
                 session.download_file_product(job_id, prod[0], output_dir)
                 status_queue.put(msg)
 
@@ -190,7 +192,7 @@ def notify_func(notify,
 
             if action == 'DELETE':
                 status_queue.put("%s%s%s: %s" %
-                                 (Fore.RED, 'Deleted', Fore.WHITE, msg))
+                                 (Fore.RED, 'Deleted', Fore.LIGHTWHITE_EX+Style.BRIGHT, msg))
                 _remove_submitted(submit_lock,
                                   submitted_jobs,
                                   job_id)
@@ -199,20 +201,20 @@ def notify_func(notify,
             if job_id in submitted_jobs:
                 if job_state == 0:
                     status_queue.put("%s%s%s: %s" %
-                                     (Fore.MAGENTA, 'Queued', Fore.WHITE, msg))
+                                     (Fore.MAGENTA, 'Queued', Fore.LIGHTWHITE_EX+Style.BRIGHT, msg))
 
                 elif job_state == 1:
                     status_queue.put("%s%s%s: %s" %
-                                     (Fore.BLUE, 'Processing', Fore.WHITE, msg))
+                                     (Fore.BLUE, 'Processing', Fore.LIGHTWHITE_EX+Style.BRIGHT, msg))
 
                 elif job_state == 2:
                     status_queue.put("%s%s%s: %s" %
-                                     (Fore.MAGENTA, 'Queueing for Download', Fore.WHITE, msg))
+                                     (Fore.MAGENTA, 'Queueing for Download', Fore.LIGHTWHITE_EX+Style.BRIGHT, msg))
                     download_queue.put(item)
 
                 elif job_state == 3:
                     error_text = item['row']['error_text']
-                    msg = "%s%s%s: %s; %s" % (Fore.RED, 'Error', Fore.WHITE, error_text, msg)
+                    msg = "%s%s%s: %s; %s" % (Fore.RED, 'Error', Fore.LIGHTWHITE_EX, error_text+Style.BRIGHT, msg)
                     result_queue.put(msg)
 
                     _remove_submitted(submit_lock,
@@ -229,7 +231,7 @@ def notify_func(notify,
 
                 elif job_state == 5:
                     # do not consider cancelled as an error
-                    msg = "%s%s%s: %s" % (Fore.RED, 'Cancelled', Fore.WHITE, msg)
+                    msg = "%s%s%s: %s" % (Fore.RED, 'Cancelled', Fore.LIGHTWHITE_EX+Style.BRIGHT, msg)
                     status_queue.put(msg)
 
                     _remove_submitted(submit_lock,
@@ -381,12 +383,13 @@ def main():
               (str(e), e.line_num))
         sys.stdout.flush()
         sys.exit(3)
-
     except requests.exceptions.HTTPError as re:
         print(re.response.text)
         sys.stdout.flush()
         sys.exit(2)
-
+    except KeyboardInterrupt:
+        sys.stdout.flush()
+        sys.exit(1)
     except Exception as exp:
         print(exp)
         sys.stdout.flush()
