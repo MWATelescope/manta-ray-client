@@ -152,9 +152,9 @@ class Session(object):
 
     def cancel_job(self, job_id):
         url = "https://{0}:{1}/api/cancel_job".format(self.host, self.port)
-        with self.session.post(url,
-                               data={'job_id': job_id},
-                               verify=self.verify) as r:
+        with self.session.get(url,
+                              params=urlencode({'job_id': job_id}),
+                              verify=self.verify) as r:
             r.raise_for_status()
 
     def download_file_product(self,
