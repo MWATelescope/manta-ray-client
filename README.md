@@ -12,7 +12,7 @@ There are two types of MWA ASVO jobs:
 
 ## Submit Jobs
 
-Users can submit multiple jobs using a CSV file and `mwa_client.py`. 
+Users can submit multiple jobs using a CSV file and `mwa_client`. 
 Once all the jobs have been processed the data will be automatically downloaded.
 The script will block until all the jobs have been downloaded or there is an error.
 
@@ -28,7 +28,7 @@ Each job submitted will transition through the following states:
 
 ## CSV Format
 
-Each row is a single job and each CSV element must be a key=value pair. 
+Each row is a single job and each CSV element must be a key=value pair. Whitespace (blank rows) and comments (lines beginning with #) are allowed. Please see the included [example.csv](example.csv) for several full working examples.
 
 ### Conversion Job Options
 
