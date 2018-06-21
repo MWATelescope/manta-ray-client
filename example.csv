@@ -12,7 +12,7 @@
 # This will:
 # 1. Submit all of the data jobs to the server
 # 2. If you leave the client running it will block/poll until the data job files are ready for download
-# 3. As each data job completes, it will download the files to the directory you specified in "-d"
+# 3. As each data job completes, it will download the files to the directory you specified in -d
 #
 # Alternatively, you can Ctrl-C the mwa_client after it submits the jobs and monitor and download
 # the data yourself via the web interface.
