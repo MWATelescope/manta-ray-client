@@ -1,0 +1,63 @@
+################################################################################
+#
+# MWA ASVO Example CSV file
+#
+# This file can be used as a template for the manta-ray-client python
+# command-line utility mwa_client. There are four common examples in this file.
+#
+# The simplest way to use this example is to install manta-ray-client, then:
+#
+# mwa_client -c example.csv -d /path/to/downloadfiles/to
+#
+# This will:
+# 1. Submit all of the data jobs to the server
+# 2. If you leave the client running it will block/poll until the data job files are ready for download
+# 3. As each data job completes, it will download the files to the directory you specified in "-d"
+#
+# Alternatively, you can Ctrl-C the mwa_client after it submits the jobs and monitor and download
+# the data yourself via the web interface.
+#
+# For full details and all possible settings (especially for data conversion
+# jobs), visit:
+#
+# https://github.com/ICRAR/manta-ray-client and view the README.md
+#
+################################################################################
+
+#
+# You can use hashes (#) to comment your csv files!  Whitespace can also
+# be used to separate out sections of your file.
+#
+
+#
+# Example 1: Conversion Job (uvfits output)
+#            This will produce a uvfits file which:
+#            * has been averaged to 80kHz fine channels (freqres)
+#            * has been averaged to 10 seconds (timeres)
+#            * has the first and last 80kHz edges flagged (edgewidth)
+#            * will continue even if one or more of the gpubox files (i.e. the coarse channels) are missing (allowmissing)
+#            * will flag the centre fine channel of each coarse channel (flagdcchannels)
+#
+obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=uvfits, allowmissing=true, flagdcchannels=true
+
+#
+# Example 2: Conversion Job (CASA measurement set output)
+#            Same as Example 1 but we will get a CASA measurement set as output
+obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
+
+#
+# Example 3: Download Job (metadata files)
+#            Note: this will download RFI flag files and metafits for use in the
+#            MWA preprocessing pipelines (cotter or RTS).You probably only want
+#            to use this if you are an advanced user and are working within one
+#            of the MWA Collaboration science teams.
+#
+obs_id=1151161304, job_type=d, download_type=vis
+
+#
+# Example 4: Download Job (raw visibility files)
+#            Note: the raw visibility files are in an MWA specific format. You
+#            probably only want to use this if you are an advanced user and
+#            are working within one of the MWA Collaboration science teams.
+#
+obs_id=1151161304, job_type=d, download_type=vis_meta
