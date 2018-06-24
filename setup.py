@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='mantaray-client',
-      version='0.1.0',
+      version='0.2.0',
       packages=find_packages(),
       install_requires=['requests>=2.18.3',
                         'websocket_client',
