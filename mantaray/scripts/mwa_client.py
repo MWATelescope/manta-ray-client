@@ -328,27 +328,31 @@ def get_status_message(item, verbose):
 def get_job_list(session):
     jobs = []
 
-    # Get all the user's jobs via the API
-    result = session.get_jobs()
+    try:
+        # Get all the user's jobs via the API
+        result = session.get_jobs()
 
-    if result:
-        for r in result:
-            job = json.loads(r)
-            jobs.append(job)
+        if result:
+            for r in result:
+                job = json.loads(r)
+                jobs.append(job)
 
         return jobs
-    else:
-        # Error getting job list
-        raise Exception("Could not obtain jobs list from server")
 
+    except Exception as e:
+        # Error getting job list
+        raise Exception("Could not obtain jobs list from server: {0}".format(e))
 
 def get_jobs_status(session, status_queue, verbose):
+    # Returns the number of jobs the user has and places a status message for each one
     jobs = get_job_list(session)
 
-    for j in jobs:
-        msg = get_status_message(j, verbose)
-        status_queue.put(msg)
+    if jobs:
+        for j in jobs:
+            msg = get_status_message(j, verbose)
+            status_queue.put(msg)
 
+    return len(jobs)
 
 def enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, verbose):
     submitted_jobs = []
@@ -521,11 +525,24 @@ def mwa_client():
     # Take an action depending on command line options specified
     if mode_submit_only or mode_full:
         jobs_list = submit_jobs(session, jobs_to_submit, status_queue)
+
     elif mode_list_only:
-        get_jobs_status(session, status_queue, verbose)
+        job_count = get_jobs_status(session, status_queue, verbose)
+        if job_count == 0:
+            print("You have no jobs.")
+
     elif mode_download_only:
+        # JobID 0 is used to download ALL of the user's ready to download jobs
         if options.download_job_id == 0:
             jobs_list = enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, verbose)
+
+            if len(jobs_list) == 0:
+                print("You have no jobs that are ready to download.")
+
+                # exit gracefully
+                status_queue.put(None)
+                status_thread.join()
+                return
         else:
             jobs_list = check_job_is_downloadable_and_enqueue(session, download_queue, options.download_job_id)
 
