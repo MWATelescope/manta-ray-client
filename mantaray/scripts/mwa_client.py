@@ -167,9 +167,16 @@ def download_func(submit_lock,
 
         for prod in products:
             try:
-                msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s' % \
+                # Some old downloads may not have sha1 information
+                if len(prod)==3:
+                    server_sha1 = prod[2]
+                else:
+                    server_sha1 = "(not defined)"
+
+                msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s server-sha1: %s%s%s' % \
                       (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, prod[0], Fore.RESET)
+                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, prod[0],
+                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, server_sha1, Fore.RESET)
 
                 file_path = "%s/%s" % (output_dir, prod[0])
                 if os.path.isfile(file_path):
@@ -311,7 +318,16 @@ def get_status_message(item, verbose):
             msg = "%s%s: %s" % (Fore.BLUE, 'Processing', msg)
 
         elif job_state == 2:
-            msg = "%s%s: %s" % (Fore.MAGENTA, 'Ready for Download', msg)
+            # Get the products and file sizes
+            products = item['row']['product']['files']
+            total_size = 0
+
+            # loop through any products and get their size in bytes
+            for prod in products:
+                file_size = int(prod[1])
+                total_size = total_size + file_size
+
+            msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, total_size)
 
         elif job_state == 3:
             msg = "%s%s: %s; %s" % (Fore.RED, 'Error', error_text, msg)
@@ -343,6 +359,7 @@ def get_job_list(session):
         # Error getting job list
         raise Exception("Could not obtain jobs list from server: {0}".format(e))
 
+
 def get_jobs_status(session, status_queue, verbose):
     # Returns the number of jobs the user has and places a status message for each one
     jobs = get_job_list(session)
@@ -353,6 +370,7 @@ def get_jobs_status(session, status_queue, verbose):
             status_queue.put(msg)
 
     return len(jobs)
+
 
 def enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, verbose):
     submitted_jobs = []
