@@ -135,4 +135,37 @@ optional arguments:
   -v, --verbose         verbose output
 
 ```
+#### Understanding and using the error file output
+You can get a machine readble error file in JSON format by specifying "-e" | "--error-file" | "--errfile" on the command line. This might be useful if you are trying to automate the download and processing of many observations and you don't want to try and parse the human readable standard output. 
 
+An example of the format is below, with two jobs with errors:
+```
+[
+    {
+        "obs_id": "1216295963", 
+        "job_id": 28979, 
+        "result": "Error: an error message"
+    },
+    {
+        "obs_id": "1216298341", 
+        "job_id": 28980, 
+        "result": "Error: some error message"
+    }
+]
+```
+Since this is JSON, in python you could simply use the below code to iterate through any errors by deserialising the JSON string:
+```
+import json
+
+# Open the error file mwa_client produced when using -e
+with open("error.txt", "r") as f:
+    # Read the JSON from the file into a string
+    json_string = f.read()
+
+    # Deserialise the JSON into a python list of objects
+    result_list = json.loads(json_string)
+
+    # Iterate through all of the errors
+    for r in result_list:        
+        print("Job:{0} ObsId:{1} Result:{2}", r['job_id'], r['obs_id'], r['result'])
+```
