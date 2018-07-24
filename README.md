@@ -97,7 +97,7 @@ export ASVO_PASS=<password>
 # Clone the repository
 git clone https://github.com/ICRAR/manta-ray-client.git
 
-# Create a virtual environment
+# Create a virtual environment (python 2.7 and 3.6 are supported)
 virtualenv env
 source env/bin/activate
 
@@ -106,28 +106,33 @@ cd manta-ray-client
 python setup.py install
 ```
 
-## Running
+## Examples
 
 ```
 mwa_client -c csvfile -d destdir           Submit jobs in the csv file, monitor them, then download the files, then exit
 mwa_client -c csvfile -s                   Submit jobs in the csv file, then exit
 mwa_client -d destdir -w JOBID             Download the job id (assuming it is ready to download), then exit
-mwa_client -d destdir -w 0                 Download any ready to download jobs, then exit
+mwa_client -d destdir -w all               Download any ready to download jobs, then exit
+mwa_client -d destdir -w all -e error_file Download any ready to download jobs, then exit, writing any errors to error_file
 mwa_client -l                              List all of your jobs and their status, then exit
 ```
 
 #### Help
 
 ```
-Options:
+optional arguments:
   -h, --help            show this help message and exit
-  -c FILE, --csv=FILE   csv job file
-  -d DIR, --dir=DIR     download directory
   -s, --submit-only     submit job(s) from csv file then exit (-d is ignored)
-  -l, --list-only       List the user's active job(s) and exit immediately (-s, -c & -d are ignored)
-  -w DOWNLOAD_JOB_ID, --download-only=DOWNLOAD_JOB_ID
-                        Download the job id (-w DOWNLOAD_JOB_ID), if it is ready; or all downloadable jobs (-w 0),
-                        then exit (-s, -c & -l are ignored)
+  -l, --list-only       List the user's active job(s) and exit immediately
+                        (-s, -c & -d are ignored)
+  -w DOWNLOAD_JOB_ID, --download-only DOWNLOAD_JOB_ID
+                        Download the job id (-w DOWNLOAD_JOB_ID), if it is ready; 
+                        or all downloadable jobs (-w all | -w 0), then exit (-s, -c & -l are ignored)
+  -c FILE, --csv FILE   csv job file
+  -d DIR, --dir DIR     download directory
+  -e ERRFILE, --error-file ERRFILE, --errfile ERRFILE
+                        Write errors in json format to an error file
   -v, --verbose         verbose output
+
 ```
 
