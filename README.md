@@ -61,6 +61,7 @@ Other options:
 * nosbgains: Do not correct for the digital gains.
 * noflagmissings: Do not flag missing gpu box files (only makes sense with allowmissing).
 * usepcentre: Centre on pointing centre.
+* sbpassband: Apply unity passband (i.e. do not apply any corrections)
 
 #### Example line in csv file
 
