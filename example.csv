@@ -42,8 +42,8 @@ obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=
 
 #
 # Example 2: Conversion Job (CASA measurement set output)
-#            Same as Example 1 but we will get a CASA measurement set as output
-obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
+#            Same as Example 1 but we will get a CASA measurement set as output, and we will ask for it to be calibrated
+obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, calibrate=true, allowmissing=true, flagdcchannels=true
 
 #
 # Example 3: Download Job (metadata files)

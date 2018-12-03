@@ -12,7 +12,7 @@ mwa_client is a helper script which provides the following functions:
 * Download your completed jobs
 
 There are two types of MWA ASVO jobs: 
-* Conversion: Average, convert and download visibility data set.
+* Conversion: Calibrate, average, convert and download a visibility data set.
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format).
 
 ## Job States
@@ -49,6 +49,7 @@ Each row is a single job and each CSV element must be a key=value pair. Whitespa
 To enable an option, set value to true e.g. norfi=true
 
 Recommended defaults:
+* calibrate: Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org) for more information.
 * allowmissing: Do not abort when not all GPU box files are available (default is to abort).
 * flagdcchannels: Flag the centre channel of each sub-band.
 
@@ -66,7 +67,7 @@ Other options:
 #### Example line in csv file
 
 ```
-obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=ms, allowmissing=true, flagdcchannels=true
+obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=ms, calibrate=true, allowmissing=true, flagdcchannels=true
 ```
 
 ### Download Job Options
@@ -88,10 +89,9 @@ obs_id=1110105120, job_type=d, download_type=vis_meta
 
 You must have an account on the [MWA ASVO website](https://asvo.mwatelescope.org)
 
-Set the credentials as environment variables in linux (usually in your profile)
+Set your API key as an environment variables in linux (usually in your profile / .bashrc). You can get your API key from [Your Profile page](https://test-asvo.mwatelescope.org/settings) on the MWA ASVO website.
 ```
-export ASVO_USER=<username>
-export ASVO_PASS=<password>
+export MWA_ASVO_API_KEY=<api key>
 ```
 
 ```
@@ -100,6 +100,10 @@ git clone https://github.com/ICRAR/manta-ray-client.git
 
 # Create a virtual environment (python 2.7 and 3.6 are supported)
 virtualenv env
+# to specify a particular python interpreter use this form:
+#   virtualenv -p /usr/bin/python3.6 env
+
+# Activate the virtual environment
 source env/bin/activate
 
 # Install mwa_client and all required packages
