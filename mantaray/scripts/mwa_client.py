@@ -13,7 +13,8 @@ except:
 from threading import Thread, RLock
 import argparse
 from colorama import init, Fore, Style
-from mantaray.api import Notify, Session
+from mantaray.api import Notify, Session, get_pretty_version_string
+
 
 # Constants for job states
 JOB_STATE_QUEUED = 0
@@ -518,6 +519,9 @@ class ParseDownloadOnly(argparse.Action):
 
 
 def mwa_client():
+    version_string = get_pretty_version_string()
+    print(version_string)
+
     epi = "\nExamples: "\
           "\nmwa_client -c csvfile -d destdir           " \
           "Submit jobs in the csv file, monitor them, then download the files, then exit" \
@@ -532,9 +536,10 @@ def mwa_client():
           "\nmwa_client -l                              " \
           "List all of your jobs and their status, then exit" \
 
-    desc = "The mwa_client is a command-line tool for submitting, monitoring and \n" \
+    desc = "{0}\n==============================\n\n" \
+           "The mwa_client is a command-line tool for submitting, monitoring and \n" \
            "downloading jobs from the MWA ASVO (https://asvo.mwatelescope.org). \n" \
-           "Please see README.md for csv file format and other details."
+           "Please see README.md for csv file format and other details.".format(version_string)
 
     parser = argparse.ArgumentParser(description=desc, epilog=epi, formatter_class=argparse.RawDescriptionHelpFormatter)
     group = parser.add_mutually_exclusive_group()
@@ -586,21 +591,30 @@ def mwa_client():
         if not os.path.isdir(outdir):
             raise Exception("Error: Output directory {0} is invalid.".format(outdir))
 
-    host = os.environ.get('ASVO_HOST', 'asvo.mwatelescope.org')
+    host = os.environ.get('MWA_ASVO_HOST', 'asvo.mwatelescope.org')
     if not host:
-        raise Exception('ASVO_HOST env variable not defined')
+        raise Exception('[ERROR] MWA_ASVO_HOST env variable not defined')
 
-    port = os.environ.get('ASVO_PORT', '8778')
+    port = os.environ.get('MWA_ASVO_PORT', '8778')
     if not port:
-        raise Exception('ASVO_PORT env variable not defined')
+        raise Exception('[ERROR] MWA_ASVO_PORT env variable not defined')
 
     user = os.environ.get('ASVO_USER', None)
-    if not user:
-        raise Exception('ASVO_USER env variable not defined')
+    if user:
+        print("[WARNING] ASVO_USER environment variable is no longer used by the mwa_client- "
+              "you should remove it from your .profile/.bashrc/startup scripts.")
 
     passwd = os.environ.get('ASVO_PASS', None)
-    if not passwd:
-        raise Exception('ASVO_PASS env variable not defined')
+    if passwd:
+        print("[WARNING] ASVO_PASS environment variable is no longer used by the mwa_client- "
+              "you should remove it from your .profile/.bashrc/startup scripts.")
+
+    api_key = os.environ.get('MWA_ASVO_API_KEY', None)
+    if not api_key:
+        raise Exception('[ERROR] MWA_ASVO_API_KEY env variable not defined. Log in to the MWA ASVO web site- '
+                        'https://asvo.mwatelescope.org/settings to obtain your API KEY, then place the following '
+                        'into your .profile/.bashrc/startup scripts (where xxx is your API key):\n'
+                        '   export MWA_ASVO_API_KEY=xxx\n')
 
     ssl_verify = os.environ.get("SSL_VERIFY", "1")
     if ssl_verify == "1":
@@ -630,13 +644,11 @@ def mwa_client():
 
     params = (host,
               port,
-              user,
-              passwd)
+              api_key)
 
-    status_queue.put("Connecting to MWA ASVO...")
+    status_queue.put("Connecting to MWA ASVO ({0}:{1})...".format(host, port))
     session = Session.login(*params)
     status_queue.put("Connected to MWA ASVO")
-
     jobs_list = []
 
     # Take an action depending on command line options specified

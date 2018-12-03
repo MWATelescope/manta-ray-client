@@ -10,6 +10,23 @@ except:
 
 from websocket import create_connection
 from requests.auth import HTTPBasicAuth
+import pkg_resources  # part of setuptools
+
+
+def get_api_version_number():
+    # This is what we send to the server when we confirm version compatibility.
+    version = pkg_resources.require("mantaray-client")[0].version  # format major.minor.revision
+
+    version_parts = version.split(".")
+    return "mantaray-clientv{0}.{1}".format(version_parts[0], version_parts[1])
+
+
+def get_version_number():
+    return pkg_resources.require("mantaray-client")[0].version
+
+
+def get_pretty_version_string():
+    return "manta-ray-client version {0}".format(get_version_number())
 
 
 class Notify(object):
@@ -38,14 +55,13 @@ class Notify(object):
     def login(cls,
               host,
               port,
-              username,
-              password,
+              api_key,
               sslopt={'cert_reqs': ssl.CERT_REQUIRED}):
 
         session = requests.session()
         url = "https://{0}:{1}/api/login".format(host, port)
         r = session.post(url,
-                         auth=HTTPBasicAuth(username, password),
+                         auth=HTTPBasicAuth(get_api_version_number(), api_key),
                          verify=False)
         r.raise_for_status()
 
@@ -88,8 +104,7 @@ class Session(object):
     def login(cls,
               host,
               port,
-              username,
-              password,
+              api_key,
               verify=False):
 
         requests.packages.urllib3.disable_warnings()
@@ -97,7 +112,7 @@ class Session(object):
         session = requests.session()
         url = "https://{0}:{1}/api/login".format(host, port)
         with session.post(url,
-                          auth=HTTPBasicAuth(username, password),
+                          auth=HTTPBasicAuth(get_api_version_number(), api_key),
                           verify=verify) as r:
             r.raise_for_status()
 
@@ -112,12 +127,14 @@ class Session(object):
                               freq_res,
                               edge_width,
                               conversion,
+                              calibrate,
                               flags=[]):
         data = {'obs_id': obs_id,
                 'timeres': time_res,
                 'freqres': freq_res,
                 'edgewidth': edge_width,
-                'conversion': conversion}
+                'conversion': conversion,
+                'calibrate': calibrate}
         data.update(dict.fromkeys(flags, 1))
         return self.submit_conversion_job_direct(data)
 
