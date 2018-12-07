@@ -38,12 +38,12 @@
 #            * will continue even if one or more of the gpubox files (i.e. the coarse channels) are missing (allowmissing)
 #            * will flag the centre fine channel of each coarse channel (flagdcchannels)
 #
-obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=uvfits, allowmissing=true, flagdcchannels=true
+obs_id=1104585920, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=uvfits, allowmissing=true, flagdcchannels=true
 
 #
 # Example 2: Conversion Job (CASA measurement set output)
 #            Same as Example 1 but we will get a CASA measurement set as output, and we will ask for it to be calibrated
-obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, calibrate=true, allowmissing=true, flagdcchannels=true
+obs_id=1104585920, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, calibrate=true, allowmissing=true, flagdcchannels=true
 
 #
 # Example 3: Download Job (metadata files)
@@ -52,7 +52,7 @@ obs_id=1151161304, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=
 #            to use this if you are an advanced user and are working within one
 #            of the MWA Collaboration science teams.
 #
-obs_id=1151161304, job_type=d, download_type=vis_meta
+obs_id=1104585920, job_type=d, download_type=vis_meta
 
 #
 # Example 4: Download Job (raw visibility files)
@@ -60,4 +60,4 @@ obs_id=1151161304, job_type=d, download_type=vis_meta
 #            probably only want to use this if you are an advanced user and
 #            are working within one of the MWA Collaboration science teams.
 #
-obs_id=1151161304, job_type=d, download_type=vis
+obs_id=1104585920, job_type=d, download_type=vis
