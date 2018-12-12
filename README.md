@@ -89,7 +89,7 @@ obs_id=1110105120, job_type=d, download_type=vis_meta
 
 You must have an account on the [MWA ASVO website](https://asvo.mwatelescope.org)
 
-Set your API key as an environment variables in linux (usually in your profile / .bashrc). You can get your API key from [Your Profile page](https://test-asvo.mwatelescope.org/settings) on the MWA ASVO website.
+Set your API key as an environment variables in linux (usually in your profile / .bashrc). You can get your API key from [Your Profile page](https://asvo.mwatelescope.org/settings) on the MWA ASVO website.
 ```
 export MWA_ASVO_API_KEY=<api key>
 ```
