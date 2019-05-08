@@ -4,6 +4,8 @@
 
 Python API and helper script (mwa_client) to interact with the [MWA ASVO](https://asvo.mwatelescope.org).
 
+For general help on using the MWA ASVO, please visit: [MWA ASVO wiki](https://wiki.mwatelescope.org/display/MP/Data+Access).
+
 ## mwa_client
 
 mwa_client is a helper script which provides the following functions:
@@ -13,7 +15,7 @@ mwa_client is a helper script which provides the following functions:
 
 There are two types of MWA ASVO jobs: 
 * Conversion: Calibrate, average, convert and download a visibility data set.
-* Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format).
+* Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
 
 ## Job States
 
@@ -36,24 +38,27 @@ Each row is a single job and each CSV element must be a key=value pair. Whitespa
 
 ### Conversion Job Options
 
-* obs_id=< integer >
-* job_type=c
-* timeres=< integer >
-* freqres=< integer >
-* edgewidth=< integer >
-* conversion=< ms || uvfits >
+* obs_id: < integer >
+* job_type: c
+* timeres: < decimal >
+  - Average N seconds of time steps together before writing output.
+* freqres: < integer >
+  - Average N kHz bandwidth of fine channels together before writing output.
+* edgewidth: < integer >
+  - Flag the given width (in kHz) of edge channels of each coarse channel.
+* conversion:  < ms || uvfits >
   - ms: CASA measurement set. 
-  - uvfits: uvfits set.
+  - uvfits: uvfits output.
 
 #### Optional options
 To enable an option, set value to true e.g. norfi=true
 
 Recommended defaults:
-* calibrate: Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org) for more information.
-* allowmissing: Do not abort when not all GPU box files are available (default is to abort).
+* allowmissing: Do not abort when not all GPU box files are available.
 * flagdcchannels: Flag the centre channel of each sub-band.
 
 Other options:
+* calibrate: Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org) for more information.
 * norfi: Disable RFI detection.
 * nostats: Disable collecting statistics.
 * nogeom: Disable geometric corrections.
@@ -72,9 +77,9 @@ obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=m
 
 ### Download Job Options
 
-* obs_id=< integer >
-* job_type=d
-* download_type=< vis_meta || vis >
+* obs_id: < integer >
+* job_type: d
+* download_type: < vis_meta || vis >
   - vis_meta: download visibility metadata only (metafits and RFI flags).
   - vis: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
 
