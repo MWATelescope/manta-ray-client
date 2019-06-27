@@ -14,7 +14,7 @@ mwa_client is a helper script which provides the following functions:
 * Download your completed jobs
 
 There are two types of MWA ASVO jobs: 
-* Conversion: Calibrate, average, convert and download a visibility data set.
+* Conversion: Average, convert and download a visibility data set ( and optionally apply calibration solutions).
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
 
 ## Job States
