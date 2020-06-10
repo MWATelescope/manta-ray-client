@@ -1,10 +1,17 @@
-# Manta-ray Client
+# Manta-ray Client (MWA ASVO Command Line Client)
 
 ## Description
 
 Python API and helper script (mwa_client) to interact with the [MWA ASVO](https://asvo.mwatelescope.org).
 
 For general help on using the MWA ASVO, please visit: [MWA ASVO wiki](https://wiki.mwatelescope.org/display/MP/Data+Access).
+
+* Supported Python versions: 
+  * Python 3.8
+  * Python 3.7
+  * Python 3.6
+  * Python 2.7 works, however see note below:
+> **_NOTE:_**  [Python2.x is now end of life](https://www.python.org/doc/sunset-python-2/), so we recommend making the switch to Python versions at or above Python 3.6 ASAP. At time of writing, manta-ray-client worked in Python2.7. Support for EOL versions of Python will be on a best effort basis where it is not a burden to do so, but will not go on indefinitely.
 
 ## mwa_client
 
@@ -16,6 +23,111 @@ mwa_client is a helper script which provides the following functions:
 There are two types of MWA ASVO jobs: 
 * Conversion: Average, convert and download a visibility data set ( and optionally apply calibration solutions).
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
+
+## Installation Options
+
+You must have an account on the [MWA ASVO website](https://asvo.mwatelescope.org)
+
+Set your API key as an environment variables in linux (usually in your profile / .bashrc). You can get your API key from [Your Profile page](https://asvo.mwatelescope.org/settings) on the MWA ASVO website.
+```
+~$ export MWA_ASVO_API_KEY=<api key>
+```
+
+Then you may install natively on your computer OR install via Docker.
+
+## Installation (Natively on your computer)
+
+#### Clone the repository
+```
+~$ git clone https://github.com/ICRAR/manta-ray-client.git
+```
+#### Create a virtual environment
+```
+$ python3 -m venv env
+```
+or if you are *still* using python2.7 you will need to use virtualenv (See [Setting up Python, Pip, and Virtualenv (external link)](http://timsherratt.org/digital-heritage-handbook/docs/python-pip-virtualenv/) for information on installing virtualenv) 
+```
+~$ virtualenv -p /usr/bin/python2.7 env
+```
+
+#### Activate the virtual environment
+```
+~$ source env/bin/activate
+(env)~$
+```
+
+#### Install mwa_client and all required packages
+```
+(env)~$ cd manta-ray-client
+(env)~/manta-ray-client$ pip3 install -r requirements.txt
+(env)~/manta-ray-client$ python3 setup.py install
+```
+
+## Installation (using Docker)
+If you prefer, you can also run the manta-ray-client as a Docker container instead of installing it locally.
+This assumes you have docker installed on your machine. If not please see the [Get Docker (external link)](https://docs.docker.com/get-docker/) page for instructions.
+
+#### Clone the repository
+```
+~$ git clone https://github.com/ICRAR/manta-ray-client.git
+```
+
+#### Build the image
+```
+~$ cd manta-ray-client
+~/manta-ray-client$ docker build --tag manta-ray-client:latest .
+```
+
+#### Use The Container
+Once the image is built, you can run the mwa_client directly. The below command will:
+* Create and launch and instances of the image (called a container), 
+* Map '/your/host/data/path/' which should be a directory on your machine, to the container's /data directory
+* Remove the container once it has finished the command
+* Map your machine's MWA_ASVO_API_KEY environment variable into the container so it has your MWA ASVO API key
+* Then 'mwa_client -w all -d /data' will run the mwa_client and download all 'Completed' jobs to the container's /data directory (which we mapped to '/your/host/data/path/' on your machine)
+```
+~$ docker run --name my_mwa_client --entrypoint="" --volume=/your/host/data/path/:/data --rm=true -e MWA_ASVO_API_KEY manta-ray-client:latest mwa_client -w all -d /data
+```
+
+Or you can open a shell within the container itself and then run as many mwa_client commands as you like, interactively, then exit to leave the container:
+```
+~$ docker run -it --name my_mwa_client --entrypoint="" --volume=/your/host/data/path/:/data --rm=true -e MWA_ASVO_API_KEY manta-ray-client:latest /bin/bash
+root@c197566f86d9:/# mwa_client -l
+...
+root@c197566f86d9:/# exit
+~$ 
+```
+You will get a prompt like the one above and from there you can run mwa_client commands as normal.
+
+## Examples
+
+```
+mwa_client -c csvfile -d destdir           Submit jobs in the csv file, monitor them, then download the files, then exit
+mwa_client -c csvfile -s                   Submit jobs in the csv file, then exit
+mwa_client -d destdir -w JOBID             Download the job id (assuming it is ready to download), then exit
+mwa_client -d destdir -w all               Download any ready to download jobs, then exit
+mwa_client -d destdir -w all -e error_file Download any ready to download jobs, then exit, writing any errors to error_file
+mwa_client -l                              List all of your jobs and their status, then exit
+```
+
+#### Help
+
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  -s, --submit-only     submit job(s) from csv file then exit (-d is ignored)
+  -l, --list-only       List the user's active job(s) and exit immediately
+                        (-s, -c & -d are ignored)
+  -w DOWNLOAD_JOB_ID, --download-only DOWNLOAD_JOB_ID
+                        Download the job id (-w DOWNLOAD_JOB_ID), if it is ready; 
+                        or all downloadable jobs (-w all | -w 0), then exit (-s, -c & -l are ignored)
+  -c FILE, --csv FILE   csv job file
+  -d DIR, --dir DIR     download directory
+  -e ERRFILE, --error-file ERRFILE, --errfile ERRFILE
+                        Write errors in json format to an error file
+  -v, --verbose         verbose output
+
+```
 
 ## Job States
 
@@ -90,63 +202,8 @@ obs_id=1110103576, job_type=d, download_type=vis
 obs_id=1110105120, job_type=d, download_type=vis_meta
 ```
 
-## Installation
-
-You must have an account on the [MWA ASVO website](https://asvo.mwatelescope.org)
-
-Set your API key as an environment variables in linux (usually in your profile / .bashrc). You can get your API key from [Your Profile page](https://asvo.mwatelescope.org/settings) on the MWA ASVO website.
-```
-export MWA_ASVO_API_KEY=<api key>
-```
-
-```
-# Clone the repository
-git clone https://github.com/ICRAR/manta-ray-client.git
-
-# Create a virtual environment (python 2.7 and 3.6 are supported)
-virtualenv env
-# to specify a particular python interpreter use this form:
-#   virtualenv -p /usr/bin/python3.6 env
-
-# Activate the virtual environment
-source env/bin/activate
-
-# Install mwa_client and all required packages
-cd manta-ray-client
-python setup.py install
-```
-
-## Examples
-
-```
-mwa_client -c csvfile -d destdir           Submit jobs in the csv file, monitor them, then download the files, then exit
-mwa_client -c csvfile -s                   Submit jobs in the csv file, then exit
-mwa_client -d destdir -w JOBID             Download the job id (assuming it is ready to download), then exit
-mwa_client -d destdir -w all               Download any ready to download jobs, then exit
-mwa_client -d destdir -w all -e error_file Download any ready to download jobs, then exit, writing any errors to error_file
-mwa_client -l                              List all of your jobs and their status, then exit
-```
-
-#### Help
-
-```
-optional arguments:
-  -h, --help            show this help message and exit
-  -s, --submit-only     submit job(s) from csv file then exit (-d is ignored)
-  -l, --list-only       List the user's active job(s) and exit immediately
-                        (-s, -c & -d are ignored)
-  -w DOWNLOAD_JOB_ID, --download-only DOWNLOAD_JOB_ID
-                        Download the job id (-w DOWNLOAD_JOB_ID), if it is ready; 
-                        or all downloadable jobs (-w all | -w 0), then exit (-s, -c & -l are ignored)
-  -c FILE, --csv FILE   csv job file
-  -d DIR, --dir DIR     download directory
-  -e ERRFILE, --error-file ERRFILE, --errfile ERRFILE
-                        Write errors in json format to an error file
-  -v, --verbose         verbose output
-
-```
-#### Understanding and using the error file output
-You can get a machine readble error file in JSON format by specifying "-e" | "--error-file" | "--errfile" on the command line. This might be useful if you are trying to automate the download and processing of many observations and you don't want to try and parse the human readable standard output. 
+### Understanding and using the error file output
+You can get a machine readable error file in JSON format by specifying "-e" | "--error-file" | "--errfile" on the command line. This might be useful if you are trying to automate the download and processing of many observations and you don't want to try and parse the human readable standard output. 
 
 An example of the format is below, with two jobs with errors:
 ```
