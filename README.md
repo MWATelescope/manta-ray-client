@@ -69,7 +69,7 @@ This assumes you have docker installed on your machine. If not please see the [G
 
 #### Clone the repository
 ```
-~$ git clone https://github.com/ICRAR/manta-ray-client.git
+~$ git clone https://github.com/mwatelescope/manta-ray-client.git
 ```
 
 #### Build the image
@@ -166,20 +166,34 @@ Each row is a single job and each CSV element must be a key=value pair. Whitespa
 To enable an option, set value to true e.g. norfi=true
 
 Recommended defaults:
-* allowmissing: Do not abort when not all GPU box files are available.
-* flagdcchannels: Flag the centre channel of each sub-band.
+* allowmissing: < true | false/omitted > Do not abort when not all GPU box files are available.
+* flagdcchannels: < true | false/omitted > Flag the centre channel of each sub-band.
+
+RFI options:
+If omitted, the below options default to false. 
+* norfi: < true | false/omitted > Do not perform RFI detection.
+* noprecomputedflags: < true | false/omitted > Do not use observatory generated precomputed flags.
+The combination of the RFI options provides the following capabilities:
+* Use precomputed flags if they exist, if not perform RFI detection (norfi: false/omitted, noprecomputedflags: false/omitted). This is the default behaviour.
+* Ignore precomputed flags and perform RFI flagging (norfi: false/omitted, noprecomputedflags: true).
+* Do not flag any RFI even if there are precomputed flag files available (norfi: true, noprecomputedflags: true).
+
+Pointing options:
+If none of the 3 options below are set, the observation's phase centre is assumed to be used.
+* usepcentre: < true | false/omitted > Centre on pointing centre.
+* phasecentrera: < ra formatted as: 00h00m00.0s | omitted > Centre on a custom phase centre  (must include phasecentrera).
+* phasecentredec: < dec formatted as: +/-00d00m00.0s | omitted > Centre on a custom phase centre (must include phasecentredec). 
 
 Other options:
-* calibrate: Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org) for more information.
-* norfi: Disable RFI detection.
-* nostats: Disable collecting statistics.
-* nogeom: Disable geometric corrections.
-* noantennapruning: Do not remove the flagged antennae.
-* noflagautos: Do not flag auto-correlations.
-* nosbgains: Do not correct for the digital gains.
-* noflagmissings: Do not flag missing gpu box files (only makes sense with allowmissing).
-* usepcentre: Centre on pointing centre.
-* sbpassband: Apply unity passband (i.e. do not apply any corrections)
+If the below options are omitted, they default to false.
+* calibrate: < true | false/omitted > Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org) for more information.
+* nostats: < true | false/omitted > Disable collecting statistics.
+* nogeom: < true | false/omitted > Disable geometric corrections.
+* noantennapruning: < true | false/omitted > Do not remove the flagged antennae.
+* noflagautos: < true | false/omitted > Do not flag auto-correlations.
+* nosbgains: < true | false/omitted > Do not correct for the digital gains.
+* noflagmissings: < true | false/omitted > Do not flag missing gpu box files (only makes sense with allowmissing).
+* sbpassband: < true | false/omitted > Apply unity passband (i.e. do not apply any corrections)
 
 #### Example line in csv file
 

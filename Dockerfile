@@ -1,4 +1,4 @@
-FROM python:3.6 
+FROM python:3.8
 
 RUN apt-get -y update \
     && apt-get -y install git \
@@ -7,8 +7,9 @@ RUN apt-get -y update \
     && apt-get autoremove \
     && apt-get clean
 
-RUN git clone "https://github.com/ICRAR/manta-ray-client" \
-    && cd manta-ray-client \
+COPY . /manta-ray-client
+
+RUN cd manta-ray-client \
     && pip3 install -r requirements.txt \
     && python3 setup.py install 
 
