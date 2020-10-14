@@ -168,15 +168,15 @@ Each row is a single job and each CSV element must be a key=value pair. Whitespa
   - `uvfits`: uvfits output.
 
 #### Optional options
-To enable an option, set value to true e.g. `norfi=true`
-If you omit an option it is equivalent to false. e.g. not specifying norfi is equivalent to `norfi=false`.
-
-Recommended defaults:
-* `allowmissing: true` Do not abort when not all GPU box (visibility) files are available.
-* `flagdcchannels: true` Flag the centre/DC channel of each coarse channel.
+* To enable an option, set value to true e.g. `norfi=true`
+* If you omit an option it is equivalent to false. e.g. not specifying norfi is equivalent to `norfi=false`.
+* Recommended defaults:
+  - `allowmissing: true` Do not abort when not all GPU box (visibility) files are available.
+  - `flagdcchannels: true` Flag the centre/DC channel of each coarse channel.
 
 ##### RFI options:
 If omitted, the below options default to false. 
+
 * `norfi: true` Do not perform RFI detection.
 * `noprecomputedflags: true` Do not use observatory generated precomputed flags.
 The combination of (or lack of) the above RFI options provides the following capabilities:
@@ -186,12 +186,14 @@ The combination of (or lack of) the above RFI options provides the following cap
 
 ##### Pointing options:
 If none of the 3 options below are set, the observation's phase centre is assumed to be used.
+
 * `usepcentre: true` Centre on the observation's pointing centre.
 * `phasecentrera: <ra formatted as: 00h00m00.0s>` Centre on a custom phase centre  (must include `phasecentredec`).
 * `phasecentredec: <dec formatted as: +00d00m00.0s>` Centre on a custom phase centre (must include `phasecentrera`). 
 
 ##### Other options:
 If the below options are omitted, they default to false.
+
 * `calibrate: true` Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org) for more information.
 * `nostats: true` Disable collecting statistics.
 * `nogeom: true` Disable geometric corrections.
