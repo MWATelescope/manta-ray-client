@@ -21,7 +21,7 @@ mwa_client is a helper script which provides the following functions:
 * Download your completed jobs
 
 There are two types of MWA ASVO jobs: 
-* Conversion: Average, convert and download a visibility data set ( and optionally apply calibration solutions).
+* Conversion: Average, convert and download a visibility data set (and optionally apply calibration solutions).
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
 
 ## Installation Options
@@ -188,8 +188,8 @@ The combination of (or lack of) the above RFI options provides the following cap
 If none of the 3 options below are set, the observation's phase centre is assumed to be used.
 
 * `usepcentre: true` Centre on the observation's pointing centre.
-* `phasecentrera: <ra formatted as: 00h00m00.0s>` Centre on a custom phase centre  (must include `phasecentredec`).
-* `phasecentredec: <dec formatted as: +00d00m00.0s>` Centre on a custom phase centre (must include `phasecentrera`). 
+* `phasecentrera: <ra formatted as: 00h00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this right ascension (must include `phasecentredec`).
+* `phasecentredec: <dec formatted as: +00d00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this declination (must include `phasecentrera`). 
 
 ##### Other options:
 If the below options are omitted, they default to false.
@@ -211,11 +211,13 @@ obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=m
 
 ### Download Job Options
 
-* obs_id: < integer >
-* job_type: d
-* download_type: < vis_meta || vis >
-  - vis_meta: download visibility metadata only (metafits and RFI flags).
-  - vis: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
+* `obs_id: <integer>`
+  - Observation ID
+* `job_type: d`
+  - Always 'd' for download jobs.
+* `download_type: <vis_meta || vis>`
+  - `vis_meta`: download visibility metadata only (metafits and RFI flags).
+  - `vis`: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
 
 #### Example lines in csv file
 
