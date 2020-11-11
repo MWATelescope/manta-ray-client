@@ -21,7 +21,7 @@ mwa_client is a helper script which provides the following functions:
 * Download your completed jobs
 
 There are two types of MWA ASVO jobs: 
-* Conversion: Average, convert and download a visibility data set ( and optionally apply calibration solutions).
+* Conversion: Average, convert and download a visibility data set (and optionally apply calibration solutions).
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
 
 ## Installation Options
@@ -69,7 +69,7 @@ This assumes you have docker installed on your machine. If not please see the [G
 
 #### Clone the repository
 ```
-~$ git clone https://github.com/ICRAR/manta-ray-client.git
+~$ git clone https://github.com/mwatelescope/manta-ray-client.git
 ```
 
 #### Build the image
@@ -150,36 +150,58 @@ Each row is a single job and each CSV element must be a key=value pair. Whitespa
 
 ### Conversion Job Options
 
-* obs_id: < integer >
-* job_type: c
-* timeres: < decimal >
-  - Average N seconds of time steps together before writing output.
-* freqres: < integer >
+* `obs_id: <integer>`   
+  - Observation ID
+* `job_type: c`
+  - Always 'c' for conversion jobs.
+* `timeres: <decimal>`
+  - Time resolution: average N seconds of time steps together before writing output.  
+* `freqres: <integer>`
   - Average N kHz bandwidth of fine channels together before writing output.
-* edgewidth: < integer >
+* `edgewidth: <integer>`
   - Flag the given width (in kHz) of edge channels of each coarse channel.
-* conversion:  < ms || uvfits >
-  - ms: CASA measurement set. 
-  - uvfits: uvfits output.
+  - Defaults to 80 kHz.
+  - Set to 0 kHz to disable edge flagging.
+* `conversion:  <ms || uvfits>`
+  - Output format.
+  - `ms`: CASA measurement set. 
+  - `uvfits`: uvfits output.
 
 #### Optional options
-To enable an option, set value to true e.g. norfi=true
+* To enable an option, set value to true e.g. `norfi=true`
+* If you omit an option it is equivalent to false. e.g. not specifying norfi is equivalent to `norfi=false`.
+* Recommended defaults:
+  - `allowmissing: true` Do not abort when not all GPU box (visibility) files are available.
+  - `flagdcchannels: true` Flag the centre/DC channel of each coarse channel.
 
-Recommended defaults:
-* allowmissing: Do not abort when not all GPU box files are available.
-* flagdcchannels: Flag the centre channel of each sub-band.
+##### RFI options:
+If omitted, the below options default to false. 
 
-Other options:
-* calibrate: Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org/pages/viewpage.action?pageId=5963859) for more information.
-* norfi: Disable RFI detection.
-* nostats: Disable collecting statistics.
-* nogeom: Disable geometric corrections.
-* noantennapruning: Do not remove the flagged antennae.
-* noflagautos: Do not flag auto-correlations.
-* nosbgains: Do not correct for the digital gains.
-* noflagmissings: Do not flag missing gpu box files (only makes sense with allowmissing).
-* usepcentre: Centre on pointing centre.
-* sbpassband: Apply unity passband (i.e. do not apply any corrections)
+* `norfi: true` Do not perform RFI detection.
+* `noprecomputedflags: true` Do not use observatory generated precomputed flags.
+The combination of (or lack of) the above RFI options provides the following capabilities:
+* (Default- i.e. neither option specified) Use precomputed flags if they exist, if not perform RFI detection.
+* `noprecomputedflags: true` Ignore precomputed flags if they exist and perform RFI flagging instead.
+* `norfi: true, noprecomputedflags: true` Do not flag any RFI even if there are precomputed flag files available.
+
+##### Pointing options:
+If none of the 3 options below are set, the observation's phase centre is assumed to be used.
+
+* `usepcentre: true` Centre on the observation's pointing centre.
+* `phasecentrera: <ra formatted as: 00h00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this right ascension (must include `phasecentredec`).
+* `phasecentredec: <dec formatted as: +00d00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this declination (must include `phasecentrera`). 
+
+##### Other options:
+If the below options are omitted, they default to false.
+
+* `calibrate: true` Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org/pages/viewpage.action?pageId=5963859) for more information.
+* `nostats: true` Disable collecting statistics.
+* `nogeom: true` Disable geometric corrections.
+* `noantennapruning: true` Do not remove the flagged antennae.
+* `noflagautos: true` Do not flag auto-correlations.
+* `nosbgains: true` Do not correct for the digital gains.
+* `noflagmissings: true` Do not flag missing gpu box files (only makes sense with `allowmissing`).
+* `sbpassband: true` Apply unity passband (i.e. do not apply any passband corrections)
 
 #### Example line in csv file
 
@@ -189,11 +211,13 @@ obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=m
 
 ### Download Job Options
 
-* obs_id: < integer >
-* job_type: d
-* download_type: < vis_meta || vis >
-  - vis_meta: download visibility metadata only (metafits and RFI flags).
-  - vis: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
+* `obs_id: <integer>`
+  - Observation ID
+* `job_type: d`
+  - Always 'd' for download jobs.
+* `download_type: <vis_meta || vis>`
+  - `vis_meta`: download visibility metadata only (metafits and RFI flags).
+  - `vis`: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
 
 #### Example lines in csv file
 
