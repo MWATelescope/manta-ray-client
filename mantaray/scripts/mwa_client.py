@@ -157,6 +157,12 @@ def submit_jobs(session, jobs_to_submit, status_queue):
         try:
             # Call the session function
             job_response = func(job[1])
+        except requests.exceptions.HTTPError as re:
+            if "No files found" in re.response.text:
+                print("{0}Skipping:{1} No files for {2} available to download. ".format(Fore.MAGENTA, Fore.RESET, job[1]['obs_id']))
+                continue 
+            else:
+                raise re
         except Exception:
             print("Error submitting job #{0} from csvfile. Details below:".format(job_number))
             raise
