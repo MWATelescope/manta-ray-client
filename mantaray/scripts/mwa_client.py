@@ -221,9 +221,9 @@ def download_func(submit_lock,
                 server_sha1 = prod[2]
 
                 msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s server-sha1: %s%s%s' % \
-                      (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, filename,
-                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, server_sha1, Fore.RESET)
+                      (Fore.GREEN, Fore.RESET, Fore.CYAN+Style.BRIGHT, job_id,
+                       Fore.RESET, Fore.CYAN+Style.BRIGHT, filename,
+                       Fore.RESET, Fore.CYAN+Style.BRIGHT, server_sha1, Fore.RESET)
 
                 file_path = "%s/%s" % (output_dir, filename)
                 if os.path.isfile(file_path):
@@ -232,9 +232,9 @@ def download_func(submit_lock,
                         continue
 
                 status_queue.put('%sDownloading:%s Job id: %s%s%s file: %s%s%s size: %s%s%s bytes'
-                                 % (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, filename,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, file_size, Fore.RESET))
+                                 % (Fore.MAGENTA, Fore.RESET, Fore.CYAN+Style.BRIGHT, job_id,
+                                    Fore.RESET, Fore.CYAN+Style.BRIGHT, filename,
+                                    Fore.RESET, Fore.CYAN + Style.BRIGHT, file_size, Fore.RESET))
                 session.download_file_product(job_id, filename, output_dir)
                 status_queue.put(msg)
 
@@ -325,11 +325,11 @@ def notify_func(notify,
 
 def get_job_summary(job_id, obs_id, job_type_desc, use_colour):
     if use_colour:
-        return '%sJob id: %s%s %sObs id: %s%s%s type: %s%s%s' % (Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
+        return '%sJob id: %s%s %sObs id: %s%s%s type: %s%s%s' % (Fore.RESET, Fore.CYAN + Style.BRIGHT,
                                                                  job_id,
-                                                                 Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                                                 Fore.RESET, Fore.CYAN + Style.BRIGHT,
                                                                  obs_id,
-                                                                 Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                                                 Fore.RESET, Fore.CYAN + Style.BRIGHT,
                                                                  job_type_desc,
                                                                  Fore.RESET)
     else:
@@ -352,9 +352,9 @@ def get_status_message(item, verbose, use_colour):
 
     if verbose:
         if use_colour:
-            msg = msg + '%s typeid: %s%s%s params: %s%s%s' % (Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
+            msg = msg + '%s typeid: %s%s%s params: %s%s%s' % (Fore.RESET, Fore.CYAN + Style.BRIGHT,
                                                               job_type,
-                                                              Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                                              Fore.RESET, Fore.CYAN + Style.BRIGHT,
                                                               job_params,
                                                               Fore.RESET)
         else:
@@ -390,7 +390,7 @@ def get_status_message(item, verbose, use_colour):
 
             if use_colour:
                 msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET,
-                                                       Fore.LIGHTWHITE_EX + Style.BRIGHT, total_size)
+                                                       Fore.CYAN + Style.BRIGHT, total_size)
             else:
                 msg = "%s: size: %s bytes" % ('Ready for Download', total_size)
 
