@@ -595,7 +595,7 @@ def mwa_client():
     if not host:
         raise Exception('[ERROR] MWA_ASVO_HOST env variable not defined')
 
-    port = os.environ.get('MWA_ASVO_PORT', '8778')
+    port = os.environ.get('MWA_ASVO_PORT', '443')
     if not port:
         raise Exception('[ERROR] MWA_ASVO_PORT env variable not defined')
 

@@ -59,7 +59,7 @@ class Notify(object):
               sslopt={'cert_reqs': ssl.CERT_REQUIRED}):
 
         session = requests.session()
-        url = "https://{0}:{1}/api/login".format(host, port)
+        url = "https://{0}:{1}/api/api_login".format(host, port)
         r = session.post(url,
                          auth=HTTPBasicAuth(get_api_version_number(), api_key),
                          verify=False)
@@ -110,7 +110,7 @@ class Session(object):
         requests.packages.urllib3.disable_warnings()
 
         session = requests.session()
-        url = "https://{0}:{1}/api/login".format(host, port)
+        url = "https://{0}:{1}/api/api_login".format(host, port)
         with session.post(url,
                           auth=HTTPBasicAuth(get_api_version_number(), api_key),
                           verify=verify) as r:
