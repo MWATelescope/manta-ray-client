@@ -105,6 +105,8 @@ def parse_row(row):
                     job_type = 'submit_conversion_job_direct'
                 elif val == 'd':
                     job_type = 'submit_download_job_direct'
+                elif val == 'v':
+                    job_type = 'submit_voltage_job_direct'
                 else:
                     raise ParseException('unknown job_type')
             else:

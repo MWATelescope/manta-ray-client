@@ -174,6 +174,14 @@ class Session(object):
             r.raise_for_status()
             return r.json()
 
+    def submit_voltage_job_direct(self, parameters):
+        url = "{0}://{1}:{2}/api/voltage_job".format(self.protocol, self.host, self.port)
+        with self.session.post(url,
+                               parameters,
+                               verify=self.verify) as r:
+            r.raise_for_status()
+            return r.json()
+
     def get_jobs(self):
         url = "{0}://{1}:{2}/api/get_jobs".format(self.protocol, self.host, self.port)
         with self.session.get(url, verify=self.verify) as r:
