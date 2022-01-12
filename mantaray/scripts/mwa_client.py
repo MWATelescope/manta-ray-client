@@ -227,6 +227,10 @@ def download_func(submit_lock,
 
                 if not uri_validator(product_name):
                     # Filename is not a downloadable URL. File must be on /astro
+                    msg = '%sJob on astro:%s Job id: %s%s%s file: %s%s%s' % \
+                            (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                            Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, product_name, Fore.RESET)
+                    status_queue.put(msg)
                     continue
 
                 url = urlparse(product_name)
@@ -397,16 +401,15 @@ def get_status_message(item, verbose, use_colour):
 
             # loop through any products and get their size in bytes
             for prod in products:
-                if prod[1] != "":
-                    file_size = int(prod[1])
-                    total_size = total_size + file_size
+                file_size = int(prod[1])
+                total_size = total_size + file_size
 
-            if total_size == 0:
+            if products[0][2] == '': #No hash, must be astro job
                 if use_colour:
-                    msg = "%s%s: %s %spath: %s%s" % (Fore.GREEN, 'Ready on /astro', msg, Fore.RESET,
-                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, products[0][0])
+                    msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (Fore.GREEN, 'Ready on /astro', msg, Fore.RESET,
+                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, products[0][0], products[0][1])
                 else:
-                    msg = "%s: path: %s" % ('Ready on /astro', products[0][0])
+                    msg = "%s: path: %s, size: %s bytes" % ('Ready on /astro', products[0][0], products[0][1])
             else:
                 if use_colour:
                     msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET,
@@ -416,7 +419,7 @@ def get_status_message(item, verbose, use_colour):
 
         elif job_state == JOB_STATE_ERROR:
             if use_colour:
-                msg = "%s%s: %s; %s" % (Fore.RED, 'Error', error_text, msg)
+                msg = "%s%s: %s %s" % (Fore.RED, 'Error', error_text, msg)
             else:
                 msg = "%s: %s" % ('Error', error_text)
 
