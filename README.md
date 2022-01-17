@@ -154,7 +154,7 @@ Please note that some options are only available depending on the choice of prep
 * `obs_id: <integer>`   
   - Observation ID
 * `preprocessor: <cotter || birli>`
-  - `cotter`: (default) Cotter preprocessor - can only be used for legacy observations
+  - `cotter (default)`: Cotter preprocessor - can only be used for legacy observations
   - `birli`: Birli preprocessor - can be used with either MWAX or legacy observations
 * `job_type: c`
   - Always 'c' for conversion jobs.
@@ -163,12 +163,13 @@ Please note that some options are only available depending on the choice of prep
 * `freqres: <integer>`
   - Average N kHz bandwidth of fine channels together before writing output.
 * `edgewidth: <integer>`
+  - Defaults to 80 kHz.
   - Flag the given width (in kHz) of edge channels of each coarse channel.
   - Set to 0 kHz to disable edge flagging.
 * `conversion:  <ms || uvfits>`
   - Output format.
   - `ms`: CASA measurement set. 
-  - `uvfits`: uvfits output.
+  - `uvfits (default)`:uvfits output.
 * `delivery:  <acacia || astro>`
   - Where you would like your data to be stored
   - `acacia (default)`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
