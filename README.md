@@ -189,13 +189,13 @@ Birli currently supports the options below, with plans for more in the future. F
 
 #### Available options for Cotter
 Cotter supports all of the options below:
-* `allowmissing=true` (recommended) Do not abort when not all GPU box (visibility) files are available.
-* `flagdcchannel=true` (recommended) Flag the centre/DC channel of each coarse channel.
+* `allowmissing=true` (recommended, default) Do not abort when not all GPU box (visibility) files are available.
+* `flagdcchannel=true` (recommended, default) Flag the centre/DC channel of each coarse channel.
+* `noflagautos=true` (recommended, default) Do not flag auto-correlations.
 * `calibrate=true` Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org/pages/viewpage.action?pageId=5963859) for more information.
 * `nostats=true` Disable collecting statistics.
 * `nogeom=true` Disable geometric corrections.
 * `noantennapruning=true` Do not remove the flagged antennae.
-* `noflagautos=true` Do not flag auto-correlations.
 * `nosbgains=true` Do not correct for the digital gains.
 * `noflagmissings=true` Do not flag missing gpu box files (only makes sense with `allowmissing`).
 * `sbpassband=true` Apply unity passband (i.e. do not apply any passband corrections)
