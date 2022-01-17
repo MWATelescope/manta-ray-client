@@ -1,7 +1,6 @@
 # Manta-ray Client (MWA ASVO Command Line Client)
 
 ## Description
-
 Python API and helper script (mwa_client) to interact with the [MWA ASVO](https://asvo.mwatelescope.org).
 
 For general help on using the MWA ASVO, please visit: [MWA ASVO wiki](https://wiki.mwatelescope.org/display/MP/Data+Access).
@@ -13,8 +12,8 @@ For general help on using the MWA ASVO, please visit: [MWA ASVO wiki](https://wi
   * Python 2.7 works, however see note below:
 > **_NOTE:_**  [Python2.x is now end of life](https://www.python.org/doc/sunset-python-2/), so we recommend making the switch to Python versions at or above Python 3.6 ASAP. At time of writing, manta-ray-client worked in Python2.7. Support for EOL versions of Python will be on a best effort basis where it is not a burden to do so, but will not go on indefinitely.
 
-## mwa_client
 
+## mwa_client
 mwa_client is a helper script which provides the following functions:
 * Submit MWA ASVO jobs in bulk
 * Monitor the status of your jobs
@@ -23,9 +22,10 @@ mwa_client is a helper script which provides the following functions:
 There are two types of MWA ASVO jobs: 
 * Conversion: Average, convert and download a visibility data set (and optionally apply calibration solutions).
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
+* Voltage: Raw voltage data from VCS observations. This option is restricted to members of the mwavcs team who have a Pawsey account. If you are interested in getting access to VCS data, please [contact us](maito:asvo_support@mwatelescope.org)
+
 
 ## Installation Options
-
 You must have an account on the [MWA ASVO website](https://asvo.mwatelescope.org)
 
 Set your API key as an environment variables in linux (usually in your profile / .bashrc). You can get your API key from [Your Profile page](https://asvo.mwatelescope.org/settings) on the MWA ASVO website.
@@ -34,6 +34,7 @@ Set your API key as an environment variables in linux (usually in your profile /
 ```
 
 Then you may install natively on your computer OR install via Docker.
+
 
 ## Installation (Natively on your computer)
 
@@ -62,6 +63,7 @@ or if you are *still* using python2.7 you will need to use virtualenv (See [Sett
 (env)~/manta-ray-client$ pip3 install -r requirements.txt
 (env)~/manta-ray-client$ python3 setup.py install
 ```
+
 
 ## Installation (using Docker)
 If you prefer, you can also run the manta-ray-client as a Docker container instead of installing it locally.
@@ -99,8 +101,8 @@ root@c197566f86d9:/# exit
 ```
 You will get a prompt like the one above and from there you can run mwa_client commands as normal.
 
-## Examples
 
+## Examples
 ```
 mwa_client -c csvfile -d destdir           Submit jobs in the csv file, monitor them, then download the files, then exit
 mwa_client -c csvfile -s                   Submit jobs in the csv file, then exit
@@ -111,7 +113,6 @@ mwa_client -l                              List all of your jobs and their statu
 ```
 
 #### Help
-
 ```
 optional arguments:
   -h, --help            show this help message and exit
@@ -129,10 +130,9 @@ optional arguments:
 
 ```
 
+
 ## Job States
-
 Each job submitted will transition through the following states:
-
 * Queued: Job has been submitted and is waiting to be processed. 
 * Processing: Job is being processed.
 * Ready for download: Job has completed- job product is ready for download.
@@ -140,18 +140,22 @@ Each job submitted will transition through the following states:
 * Download Compete: Product download has been completed.
 * Error: There was an error. 
 
-## Submitting Jobs
 
+## Submitting Jobs
 Users can submit multiple jobs using a CSV file (see below for instructions).
 
-## CSV Format
 
+## CSV Format
 Each row is a single job and each CSV element must be a key=value pair. Whitespace (blank rows) and comments (lines beginning with #) are allowed. Please see the included [example.csv](example.csv) for several full working examples.
 
-### Conversion Job Options
 
+## Conversion Job Options
+Please note that some options are only available depending on the choice of preprocessor (explained below).
 * `obs_id: <integer>`   
   - Observation ID
+* `preprocessor: <cotter || birli>`
+  - `cotter`: (default) Cotter preprocessor - can only be used for legacy observations
+  - `birli`: Birli preprocessor - can be used with either MWAX or legacy observations
 * `job_type: c`
   - Always 'c' for conversion jobs.
 * `timeres: <decimal>`
@@ -160,57 +164,61 @@ Each row is a single job and each CSV element must be a key=value pair. Whitespa
   - Average N kHz bandwidth of fine channels together before writing output.
 * `edgewidth: <integer>`
   - Flag the given width (in kHz) of edge channels of each coarse channel.
-  - Defaults to 80 kHz.
   - Set to 0 kHz to disable edge flagging.
 * `conversion:  <ms || uvfits>`
   - Output format.
   - `ms`: CASA measurement set. 
   - `uvfits`: uvfits output.
+* `delivery:  <acacia || astro>`
+  - Where you would like your data to be stored
+  - `acacia (default)`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
+  - `astro`: Data will be left on the /astro file system at Pawsey in /astro/<group>/asvo/<job_id>. This option is only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
 
-#### Optional options
+### Flags / Optional Options
+* In addition to the options specified above, a number of flags (or optional options) can also be passed with the job request.
+* The available flags change depending on the choice of preprocessor (cotter/birli)
 * To enable an option, set value to true e.g. `norfi=true`
 * If you omit an option it is equivalent to false. e.g. not specifying norfi is equivalent to `norfi=false`.
-* Recommended defaults:
-  - `allowmissing: true` Do not abort when not all GPU box (visibility) files are available.
-  - `flagdcchannels: true` Flag the centre/DC channel of each coarse channel.
+
+#### Available options for Birli
+Birli currently supports the options below, with plans for more in the future. For more info on the Birli preprocessor, please visit [the repository](https://github.com/mwatelescope/birli). Any other flags passed while the birli preprocesor is selected will be ignored.
+* `norfi=true` Do not perform RFI detection.
+* `nogeom=true` Disable geometric corrections.
+* `nocablelength=true` Disable cable length corrections.
+
+#### Available options for Cotter
+Cotter supports all of the options below:
+* `allowmissing=true` (recommended) Do not abort when not all GPU box (visibility) files are available.
+* `flagdcchannel=true` (recommended) Flag the centre/DC channel of each coarse channel.
+* `calibrate=true` Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org/pages/viewpage.action?pageId=5963859) for more information.
+* `nostats=true` Disable collecting statistics.
+* `nogeom=true` Disable geometric corrections.
+* `noantennapruning=true` Do not remove the flagged antennae.
+* `noflagautos=true` Do not flag auto-correlations.
+* `nosbgains=true` Do not correct for the digital gains.
+* `noflagmissings=true` Do not flag missing gpu box files (only makes sense with `allowmissing`).
+* `sbpassband=true` Apply unity passband (i.e. do not apply any passband corrections)
 
 ##### RFI options:
 If omitted, the below options default to false. 
-
-* `norfi: true` Do not perform RFI detection.
-* `noprecomputedflags: true` Do not use observatory generated precomputed flags.
-The combination of (or lack of) the above RFI options provides the following capabilities:
-* (Default- i.e. neither option specified) Use precomputed flags if they exist, if not perform RFI detection.
-* `noprecomputedflags: true` Ignore precomputed flags if they exist and perform RFI flagging instead.
-* `norfi: true, noprecomputedflags: true` Do not flag any RFI even if there are precomputed flag files available.
+* `norfi=false, noprecomputedflags=false` We will use precomputed flags if they exist. If not, we will perform RFI flagging.
+* `norfi=true, noprecomputedflags=false` We will not perform RFI flagging. Precomputed flags will be used if they are available.
+* `norfi=false, noprecomputedflags=true` We will ignore precomputed flags and perform RFI flagging.
+* `norfi=true, noprecomputedflags=true` We will not perform RFI flagging. Precomputed flags will not be used if they are available.
 
 ##### Pointing options:
 If none of the 3 options below are set, the observation's phase centre is assumed to be used.
-
 * `usepcentre: true` Centre on the observation's pointing centre.
 * `phasecentrera: <ra formatted as: 00h00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this right ascension (must include `phasecentredec`).
 * `phasecentredec: <dec formatted as: +00d00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this declination (must include `phasecentrera`). 
 
-##### Other options:
-If the below options are omitted, they default to false.
-
-* `calibrate: true` Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org/pages/viewpage.action?pageId=5963859) for more information.
-* `nostats: true` Disable collecting statistics.
-* `nogeom: true` Disable geometric corrections.
-* `noantennapruning: true` Do not remove the flagged antennae.
-* `noflagautos: true` Do not flag auto-correlations.
-* `nosbgains: true` Do not correct for the digital gains.
-* `noflagmissings: true` Do not flag missing gpu box files (only makes sense with `allowmissing`).
-* `sbpassband: true` Apply unity passband (i.e. do not apply any passband corrections)
-
 #### Example line in csv file
-
 ```
 obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=ms, calibrate=true, allowmissing=true, flagdcchannels=true
 ```
 
-### Download Job Options
 
+### Download Job Options
 * `obs_id: <integer>`
   - Observation ID
 * `job_type: d`
@@ -218,13 +226,34 @@ obs_id=1110103576, job_type=c, timeres=8, freqres=40, edgewidth=80, conversion=m
 * `download_type: <vis_meta || vis>`
   - `vis_meta`: download visibility metadata only (metafits and RFI flags).
   - `vis`: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
+* `delivery: <acacia || astro>`
+  - `acacia (default)`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
+  - `astro`: Data will be left on the /astro file system at Pawsey in /astro/<group>/asvo/<job_id>. This option is only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
 
 #### Example lines in csv file
+```
+obs_id=1110103576, job_type=d, download_type=vis, delivery=acacia
+obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=astro
+```
 
+
+### Voltage Job Options
+Note that voltage jobs will always be left on /astro, and you will therefore need a Pawsey account to submit them. Please get in contact if you're interested in accessing VCS data.
+
+* `obs_id: <integer>`
+  - Observation ID
+* `job_type: v`
+  - Always 'v' for voltage jobs.
+* `offset: <integer>`
+  - Number of seconds from the beginning of the observation for which you would like data
+* `duration: <integer>`
+  - Number of seconds of voltage data to be included in the job.
+
+#### Example lines in csv file
 ```
-obs_id=1110103576, job_type=d, download_type=vis
-obs_id=1110105120, job_type=d, download_type=vis_meta
+obs_id=1323776840, job_type=v, offset=0, duration=1200
 ```
+
 
 ### Understanding and using the error file output
 You can get a machine readable error file in JSON format by specifying "-e" | "--error-file" | "--errfile" on the command line. This might be useful if you are trying to automate the download and processing of many observations and you don't want to try and parse the human readable standard output. 
