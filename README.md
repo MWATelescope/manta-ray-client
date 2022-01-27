@@ -166,10 +166,11 @@ Please note that some options are only available depending on the choice of prep
   - Defaults to 80 kHz.
   - Flag the given width (in kHz) of edge channels of each coarse channel.
   - Set to 0 kHz to disable edge flagging.
+  - Currently not available for Birli
 * `conversion:  <ms || uvfits>`
   - Output format.
-  - `ms`: CASA measurement set. 
-  - `uvfits (default)`:uvfits output.
+  - `ms`: CASA measurement set. Currently not available for Birli.
+  - `uvfits (default)`: uvfits output.
 * `delivery:  <acacia || astro>`
   - Where you would like your data to be stored
   - `acacia (default)`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
@@ -195,6 +196,7 @@ Cotter supports all of the options below:
 * `calibrate=true` Apply a calibration solution to the dataset, if found. If not found, the job will fail- in this case you can resubmit the job without this option for uncalibrated raw visibilities. See: [Data Access/MWA ASVO Calibration Option ](https://wiki.mwatelescope.org/display/MP/MWA+ASVO+Calibration+Option) on the [MWA Telescope Wiki](https://wiki.mwatelescope.org/pages/viewpage.action?pageId=5963859) for more information.
 * `nostats=true` Disable collecting statistics.
 * `nogeom=true` Disable geometric corrections.
+* `nocablelength=true` Disable cable length corrections.
 * `noantennapruning=true` Do not remove the flagged antennae.
 * `nosbgains=true` Do not correct for the digital gains.
 * `noflagmissings=true` Do not flag missing gpu box files (only makes sense with `allowmissing`).
@@ -208,10 +210,13 @@ If omitted, the below options default to false.
 * `norfi=true, noprecomputedflags=true` We will not perform RFI flagging. Precomputed flags will not be used if they are available.
 
 ##### Pointing options:
-If none of the 3 options below are set, the observation's phase centre is assumed to be used.
-* `usepcentre: true` Centre on the observation's pointing centre.
-* `phasecentrera: <ra formatted as: 00h00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this right ascension (must include `phasecentredec`).
-* `phasecentredec: <dec formatted as: +00d00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this declination (must include `phasecentrera`). 
+If the `centre` options is omitted, the job will default to using the observations phase centre.
+* `centre: <phase || pointing || custom>`
+    - `phase` Centre on the observations phase centre
+    - `pointing` Centre on the observations pointing centre
+    - `custom` Centre on a custom phase centre. If this option is specified, two additional parameters must be passed:
+    - `phasecentrera: <ra formatted as: 00h00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this right ascension (must include phasecentredec).
+    - `phasecentredec: <dec formatted as: +00d00m00.0s>` ICRS (J2000.0). Centre on a custom phase centre with this declination (must include phasecentrera).
 
 #### Example line in csv file
 ```
