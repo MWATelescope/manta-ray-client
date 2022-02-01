@@ -4,6 +4,7 @@ import csv
 import sys
 import requests
 import json
+from urllib.parse import urlparse
 
 try:
     from queue import Queue, Empty
@@ -104,6 +105,8 @@ def parse_row(row):
                     job_type = 'submit_conversion_job_direct'
                 elif val == 'd':
                     job_type = 'submit_download_job_direct'
+                elif val == 'v':
+                    job_type = 'submit_voltage_job_direct'
                 else:
                     raise ParseException('unknown job_type')
             else:
@@ -198,6 +201,14 @@ def _remove_submitted(submit_lock,
         pass
 
 
+def uri_validator(product):
+    try:
+        result = urlparse(product)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
+
 def download_func(submit_lock,
                   submitted_jobs,
                   download_queue,
@@ -216,16 +227,27 @@ def download_func(submit_lock,
 
         for prod in products:
             try:
-                filename = prod[0]
+                product_name = prod[0]
                 file_size = prod[1]
                 server_sha1 = prod[2]
 
+                if not uri_validator(product_name):
+                    # Filename is not a downloadable URL. File must be on /astro
+                    msg = '%sJob on astro:%s Job id: %s%s%s file: %s%s%s' % \
+                            (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                            Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, product_name, Fore.RESET)
+                    status_queue.put(msg)
+                    continue
+
+                url = urlparse(product_name)
+                filename = os.path.basename(url.path)
+                file_path = os.path.join(output_dir, filename)
+
                 msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s server-sha1: %s%s%s' % \
                       (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, filename,
+                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_path,
                        Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, server_sha1, Fore.RESET)
 
-                file_path = "%s/%s" % (output_dir, filename)
                 if os.path.isfile(file_path):
                     if os.path.getsize(file_path) == file_size:
                         status_queue.put(msg)
@@ -233,9 +255,9 @@ def download_func(submit_lock,
 
                 status_queue.put('%sDownloading:%s Job id: %s%s%s file: %s%s%s size: %s%s%s bytes'
                                  % (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, filename,
+                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, product_name,
                                     Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, file_size, Fore.RESET))
-                session.download_file_product(job_id, filename, output_dir)
+                session.download_file_product(job_id, product_name, file_path)
                 status_queue.put(msg)
 
             except Exception as e:
@@ -388,15 +410,22 @@ def get_status_message(item, verbose, use_colour):
                 file_size = int(prod[1])
                 total_size = total_size + file_size
 
-            if use_colour:
-                msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET,
-                                                       Fore.LIGHTWHITE_EX + Style.BRIGHT, total_size)
+            if products[0][2] == '': #No hash, must be astro job
+                if use_colour:
+                    msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (Fore.GREEN, 'Ready on /astro', msg, Fore.RESET,
+                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, products[0][0], products[0][1])
+                else:
+                    msg = "%s: path: %s, size: %s bytes" % ('Ready on /astro', products[0][0], products[0][1])
             else:
-                msg = "%s: size: %s bytes" % ('Ready for Download', total_size)
+                if use_colour:
+                    msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET,
+                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, total_size)
+                else:
+                    msg = "%s: size: %s bytes" % ('Ready for Download', total_size)
 
         elif job_state == JOB_STATE_ERROR:
             if use_colour:
-                msg = "%s%s: %s; %s" % (Fore.RED, 'Error', error_text, msg)
+                msg = "%s%s: %s %s" % (Fore.RED, 'Error', error_text, msg)
             else:
                 msg = "%s: %s" % ('Error', error_text)
 
@@ -601,9 +630,13 @@ def mwa_client():
     if not host:
         raise Exception('[ERROR] MWA_ASVO_HOST env variable not defined')
 
-    port = os.environ.get('MWA_ASVO_PORT', '8778')
+    port = os.environ.get('MWA_ASVO_PORT', '443')
     if not port:
         raise Exception('[ERROR] MWA_ASVO_PORT env variable not defined')
+
+    https = os.environ.get('MWA_ASVO_HTTPS', '1')
+    if not https:
+        raise Exception('[ERROR] MWA_ASVO_SSL env variable not defined')
 
     user = os.environ.get('ASVO_USER', None)
     if user:
@@ -648,7 +681,8 @@ def mwa_client():
         if len(jobs_to_submit) == 0:
             raise Exception("Error: No jobs to submit")
 
-    params = (host,
+    params = (https,
+              host,
               port,
               api_key)
 

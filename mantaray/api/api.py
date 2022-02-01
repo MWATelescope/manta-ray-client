@@ -2,6 +2,8 @@ import os
 import ssl
 import json
 import requests
+from urllib.request import urlretrieve
+from urllib.parse import urlparse
 
 try:
     from urllib.parse import urlencode
@@ -53,13 +55,17 @@ class Notify(object):
 
     @classmethod
     def login(cls,
+              https,
               host,
               port,
               api_key,
               sslopt={'cert_reqs': ssl.CERT_REQUIRED}):
 
         session = requests.session()
-        url = "https://{0}:{1}/api/login".format(host, port)
+        protocol = 'https' if https == '1' else 'http'
+        websocket = 'wss' if https == '1' else 'ws'
+
+        url = "{0}://{1}:{2}/api/api_login".format(protocol, host, port)
         r = session.post(url,
                          auth=HTTPBasicAuth(get_api_version_number(), api_key),
                          verify=False)
@@ -69,7 +75,8 @@ class Notify(object):
         cookie_str = '{0}={1}'.format('MWA_JOB_COOKIE',
                                       cookie['MWA_JOB_COOKIE'])
 
-        ws_url = "wss://{0}:{1}/api/job_results".format(host,
+        ws_url = "{0}://{1}:{2}/api/job_results".format(websocket,
+                                                        host,
                                                         port)
         ws = create_connection(ws_url,
                                header={'Cookie': cookie_str},
@@ -81,11 +88,14 @@ class Notify(object):
 class Session(object):
 
     def __init__(self,
+                 https,
                  host,
                  port,
                  session,
                  verify):
 
+        self.protocol = 'https' if https == '1' else 'http'
+        self.websocket = 'wss' if https == '1' else 'ws'
         self.host = host
         self.port = port
         self.session = session
@@ -102,6 +112,7 @@ class Session(object):
 
     @classmethod
     def login(cls,
+              https,
               host,
               port,
               api_key,
@@ -110,13 +121,15 @@ class Session(object):
         requests.packages.urllib3.disable_warnings()
 
         session = requests.session()
-        url = "https://{0}:{1}/api/login".format(host, port)
+        protocol = 'https' if https == '1' else 'http'
+        url = "{0}://{1}:{2}/api/api_login".format(protocol, host, port)
         with session.post(url,
                           auth=HTTPBasicAuth(get_api_version_number(), api_key),
                           verify=verify) as r:
             r.raise_for_status()
 
-            return Session(host,
+            return Session(https,
+                           host,
                            port,
                            session,
                            verify=verify)
@@ -139,7 +152,7 @@ class Session(object):
         return self.submit_conversion_job_direct(data)
 
     def submit_conversion_job_direct(self, parameters):
-        url = "https://{0}:{1}/api/conversion_job".format(self.host, self.port)
+        url = "{0}://{1}:{2}/api/conversion_job".format(self.protocol, self.host, self.port)
         with self.session.post(url,
                                parameters,
                                verify=self.verify) as r:
@@ -154,7 +167,15 @@ class Session(object):
         return self.submit_download_job_direct(data)
 
     def submit_download_job_direct(self, parameters):
-        url = "https://{0}:{1}/api/download_vis_job".format(self.host, self.port)
+        url = "{0}://{1}:{2}/api/download_vis_job".format(self.protocol, self.host, self.port)
+        with self.session.post(url,
+                               parameters,
+                               verify=self.verify) as r:
+            r.raise_for_status()
+            return r.json()
+
+    def submit_voltage_job_direct(self, parameters):
+        url = "{0}://{1}:{2}/api/voltage_job".format(self.protocol, self.host, self.port)
         with self.session.post(url,
                                parameters,
                                verify=self.verify) as r:
@@ -162,13 +183,13 @@ class Session(object):
             return r.json()
 
     def get_jobs(self):
-        url = "https://{0}:{1}/api/get_jobs".format(self.host, self.port)
+        url = "{0}://{1}:{2}/api/get_jobs".format(self.protocol, self.host, self.port)
         with self.session.get(url, verify=self.verify) as r:
             r.raise_for_status()
             return r.json()
 
     def cancel_job(self, job_id):
-        url = "https://{0}:{1}/api/cancel_job".format(self.host, self.port)
+        url = "{0}://{1}:{2}/api/cancel_job".format(self.protocol, self.host, self.port)
         with self.session.get(url,
                               params=urlencode({'job_id': job_id}),
                               verify=self.verify) as r:
@@ -176,33 +197,31 @@ class Session(object):
 
     def download_file_product(self,
                               job_id,
-                              filename,
-                              output_path,
-                              chunk_size=65536):
+                              url,
+                              output_path):
 
-        url = "https://{0}:{1}/api/download".format(self.host, self.port)
-        params = {'file_name': filename, 'job_id': job_id}
-        with self.session.get(url=url,
-                              params=urlencode(params),
-                              stream=True,
-                              verify=self.verify) as r:
-            r.raise_for_status()
+        (file_path, headers) = urlretrieve(url, output_path)
 
-            try:
-                os.makedirs(output_path)
-            except OSError:
-                pass
+        return file_path
 
-            full_output_path = '{0}/{1}'.format(output_path, filename)
-            with open(full_output_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):
-                    if chunk:
-                        f.write(chunk)
+        # with self.session.get(url=filename,
+        #                       stream=True,
+        #                       verify=self.verify) as r:
+        #     r.raise_for_status()
 
-            file_size = os.path.getsize(full_output_path)
-            content_length = int(r.headers['content-length'])
-            if file_size != content_length:
-                raise Exception('Stream error. id: %s file: %s'
-                                % (job_id, filename))
+        #     try:
+        #         os.makedirs(output_path)
+        #     except OSError:
+        #         pass
 
-            return full_output_path
+        #     full_output_path = '{0}/{1}'.format(output_path, filename)
+        #     with open(full_output_path, 'wb') as f:
+        #         for chunk in r.iter_content(chunk_size=chunk_size):
+        #             if chunk:
+        #                 f.write(chunk)
+
+        #     file_size = os.path.getsize(full_output_path)
+        #     content_length = int(r.headers['content-length'])
+        #     if file_size != content_length:
+        #         raise Exception('Stream error. id: %s file: %s'
+        #                         % (job_id, filename))
