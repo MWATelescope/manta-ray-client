@@ -161,30 +161,20 @@ def submit_jobs(session, jobs_to_submit, status_queue):
             # Call the session function
             job_response = func(job[1])
         except requests.exceptions.HTTPError as re:
-            if "No files found" in re.response.text:
-                print("{0}Skipping:{1} No files for {2} available to download. ".format(Fore.MAGENTA, Fore.RESET, job[1]['obs_id']))
-                continue 
-            else:
-                raise re
+            response_dict = json.loads(re.response.text)
+            error_code = response_dict.get('error_code')
+            error_text = response_dict.get('error')
+
+            if error_code == 0:
+                status_queue.put("{0}Skipping:{1} {2}.".format(Fore.MAGENTA, Fore.RESET, error_text))
+            if error_code == 2:
+                status_queue.put("{0}Skipping:{1} {2} already queued, processing or complete.".format(Fore.MAGENTA, Fore.RESET, job[1]['obs_id']))
         except Exception:
             print("Error submitting job #{0} from csvfile. Details below:".format(job_number))
             raise
         else:
-            # Get the job_id returned
             new_job_id = job_response['job_id']
-            job_exists = False
-
-            # Loop through the users existing jobs, looking for the new_job_id
-            for e in existing_jobs:
-                if e["row"]["id"] == new_job_id:
-                    job_exists = True
-                    break
-
-            # Let user know if it was a new job or if that job already existed
-            if job_exists:
-                status_queue.put('Job: %s already exists' % (new_job_id,))
-            else:
-                status_queue.put('Submitted job: %s ' % (new_job_id,))
+            status_queue.put('Submitted job: %s ' % (new_job_id,))
 
             submitted_jobs.append(new_job_id)
 
