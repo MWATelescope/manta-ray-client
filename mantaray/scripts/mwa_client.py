@@ -645,7 +645,7 @@ def mwa_client():
                         'into your .profile/.bashrc/startup scripts (where xxx is your API key):\n'
                         '   export MWA_ASVO_API_KEY=xxx\n')
 
-    ssl_verify = os.environ.get("SSL_VERIFY", "1")
+    ssl_verify = os.environ.get("SSL_VERIFY", "0")
     if ssl_verify == "1":
         sslopt = {'cert_reqs': ssl.CERT_REQUIRED}
     else:
