@@ -1,4 +1,5 @@
 import os
+import sys
 import ssl
 import json
 import requests
@@ -10,7 +11,7 @@ try:
 except:
     from urllib import urlencode
 
-from websocket import create_connection
+from websocket import create_connection, WebSocketConnectionClosedException, WebSocketTimeoutException
 from requests.auth import HTTPBasicAuth
 import pkg_resources  # part of setuptools
 
@@ -48,7 +49,12 @@ class Notify(object):
         self._session.close()
 
     def recv(self):
-        frame = self._ws.recv()
+        try:
+            frame = self._ws.recv()
+        except (WebSocketConnectionClosedException, WebSocketTimeoutException) as e:
+            print("Couldn't connect to WebSocket. Exiting notify thread.")
+            self.close()
+            sys.exit(0)
         if not frame:
             return None
         return json.loads(frame)
@@ -203,25 +209,3 @@ class Session(object):
         (file_path, headers) = urlretrieve(url, output_path)
 
         return file_path
-
-        # with self.session.get(url=filename,
-        #                       stream=True,
-        #                       verify=self.verify) as r:
-        #     r.raise_for_status()
-
-        #     try:
-        #         os.makedirs(output_path)
-        #     except OSError:
-        #         pass
-
-        #     full_output_path = '{0}/{1}'.format(output_path, filename)
-        #     with open(full_output_path, 'wb') as f:
-        #         for chunk in r.iter_content(chunk_size=chunk_size):
-        #             if chunk:
-        #                 f.write(chunk)
-
-        #     file_size = os.path.getsize(full_output_path)
-        #     content_length = int(r.headers['content-length'])
-        #     if file_size != content_length:
-        #         raise Exception('Stream error. id: %s file: %s'
-        #                         % (job_id, filename))

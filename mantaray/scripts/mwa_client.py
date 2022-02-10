@@ -726,7 +726,6 @@ def mwa_client():
                                                          status_queue,
                                                          verbose))
 
-        notify_thread.daemon = True
         notify_thread.start()
 
     threads = []
