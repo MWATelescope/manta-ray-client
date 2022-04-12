@@ -3,6 +3,7 @@ import ssl
 import csv
 import sys
 import requests
+import shutil
 import json
 from urllib.parse import urlparse
 
@@ -161,9 +162,13 @@ def submit_jobs(session, jobs_to_submit, status_queue):
             # Call the session function
             job_response = func(job[1])
         except requests.exceptions.HTTPError as re:
+            status_code = re.response.status_code
             response_dict = json.loads(re.response.text)
             error_code = response_dict.get('error_code')
             error_text = response_dict.get('error')
+
+            if status_code != 200:
+                raise Exception(error_text)
 
             if error_code == 0:
                 status_queue.put("{0}Skipping:{1} {2}.".format(Fore.MAGENTA, Fore.RESET, error_text))
@@ -217,38 +222,60 @@ def download_func(submit_lock,
 
         for prod in products:
             try:
-                product_name = prod[0]
-                file_size = prod[1]
-                server_sha1 = prod[2]
+                delivery = prod['type']
+                file_size = prod['size']
+                if delivery == 'acacia':
+                    file_sha1 = prod['sha1']
+                    file_url = prod['url']
 
-                if not uri_validator(product_name):
-                    # Filename is not a downloadable URL. File must be on /astro
-                    msg = '%sJob on astro:%s Job id: %s%s%s file: %s%s%s' % \
-                            (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                            Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, product_name, Fore.RESET)
+                    parsed_url = urlparse(file_url)
+                    file_name = os.path.basename(parsed_url.path)
+                    file_path = os.path.join(output_dir, file_name)
+
+                    if os.path.isfile(file_path):
+                        if os.path.getsize(file_path) == file_size:
+                            msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s server-sha1: %s%s%s' % \
+                                    (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_path,
+                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_sha1, Fore.RESET)
+                            status_queue.put(msg)
+                            continue
+
+                    msg = '%sDownloading:%s Job id: %s%s%s file: %s%s%s size: %s%s%s bytes' % \
+                            (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                            Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_url,
+                            Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, file_size, Fore.RESET)
                     status_queue.put(msg)
-                    continue
+                    session.download_file_product(job_id, file_url, file_path)
+                else:
+                    #astro
+                    astro_path = prod['path']
 
-                url = urlparse(product_name)
-                filename = os.path.basename(url.path)
-                file_path = os.path.join(output_dir, filename)
-
-                msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s server-sha1: %s%s%s' % \
-                      (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_path,
-                       Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, server_sha1, Fore.RESET)
-
-                if os.path.isfile(file_path):
-                    if os.path.getsize(file_path) == file_size:
+                    if os.path.isdir(astro_path):
+                        #Astro folder exists on current system
+                        output_path = os.path.join(output_dir, os.path.basename(astro_path))
+                        if os.path.isdir(output_path):
+                            #Astro folder has already been moved to output_dir
+                            msg = '%sDownload Complete:%s Job id: %s%s%s file: %s%s%s' % \
+                                    (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, output_path, Fore.RESET)
+                            status_queue.put(msg)
+                            continue
+                        else:
+                            #Astro folder has not been moved to output_dir yet
+                            msg = '%sCopying job to directory:%s Job id: %s%s%s file: %s%s%s' % \
+                                    (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, output_path, Fore.RESET)
+                            status_queue.put(msg)
+                            shutil.move(astro_path, output_dir)
+                            continue
+                    else:
+                        #Astro folder does not exist on current system. Let te user know it's ready and exit
+                        msg = '%sReady on /astro:%s Job id: %s%s%s file: %s%s%s' % \
+                                (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                                Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, astro_path, Fore.RESET)
                         status_queue.put(msg)
                         continue
-
-                status_queue.put('%sDownloading:%s Job id: %s%s%s file: %s%s%s size: %s%s%s bytes'
-                                 % (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, product_name,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, file_size, Fore.RESET))
-                session.download_file_product(job_id, product_name, file_path)
-                status_queue.put(msg)
 
             except Exception as e:
                 result_queue.put(Result(job_id, obs_id, e, e))
@@ -397,15 +424,15 @@ def get_status_message(item, verbose, use_colour):
 
             # loop through any products and get their size in bytes
             for prod in products:
-                file_size = int(prod[1])
+                file_size = int(prod['size'])
                 total_size = total_size + file_size
 
-            if products[0][2] == '': #No hash, must be astro job
+            if products[0]['type'] == 'astro': #No hash, must be astro job
                 if use_colour:
                     msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (Fore.GREEN, 'Ready on /astro', msg, Fore.RESET,
-                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, products[0][0], products[0][1])
+                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, products[0]['path'], products[0]['size'])
                 else:
-                    msg = "%s: path: %s, size: %s bytes" % ('Ready on /astro', products[0][0], products[0][1])
+                    msg = "%s: path: %s, size: %s bytes" % ('Ready on /astro', products[0]['path'], products[0]['size'])
             else:
                 if use_colour:
                     msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET,
@@ -439,8 +466,7 @@ def get_job_list(session):
         result = session.get_jobs()
 
         if result:
-            for r in result:
-                job = json.loads(r)
+            for job in result:
                 jobs.append(job)
 
         return jobs
@@ -726,6 +752,7 @@ def mwa_client():
                                                          status_queue,
                                                          verbose))
 
+        notify_thread.daemon = True
         notify_thread.start()
 
     threads = []
@@ -765,8 +792,8 @@ def mwa_client():
         t.join()
 
     if mode_full:
-        notify.close()
         notify_thread.join()
+        notify.close()
 
     status_queue.put(None)
     status_thread.join()

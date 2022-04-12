@@ -65,7 +65,7 @@ class Notify(object):
               host,
               port,
               api_key,
-              sslopt={'cert_reqs': ssl.CERT_REQUIRED}):
+              sslopt={'cert_reqs': ssl.CERT_NONE}):
 
         session = requests.session()
         protocol = 'https' if https == '1' else 'http'
@@ -84,6 +84,7 @@ class Notify(object):
         ws_url = "{0}://{1}:{2}/api/job_results".format(websocket,
                                                         host,
                                                         port)
+
         ws = create_connection(ws_url,
                                header={'Cookie': cookie_str},
                                sslopt=sslopt)
