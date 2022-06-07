@@ -166,14 +166,12 @@ def submit_jobs(session, jobs_to_submit, status_queue):
             response_dict = json.loads(re.response.text)
             error_code = response_dict.get('error_code')
             error_text = response_dict.get('error')
-
-            if status_code != 200:
-                raise Exception(error_text)
+            job_id = response_dict.get('job_id')
 
             if error_code == 0:
                 status_queue.put("{0}Skipping:{1} {2}.".format(Fore.MAGENTA, Fore.RESET, error_text))
             if error_code == 2:
-                status_queue.put("{0}Skipping:{1} {2} already queued, processing or complete.".format(Fore.MAGENTA, Fore.RESET, job[1]['obs_id']))
+                status_queue.put("{0}Skipping:{1} {2} already queued, processing or complete.".format(Fore.MAGENTA, Fore.RESET, job_id))
         except Exception:
             print("Error submitting job #{0} from csvfile. Details below:".format(job_number))
             raise
