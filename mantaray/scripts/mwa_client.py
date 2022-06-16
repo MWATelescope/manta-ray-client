@@ -790,8 +790,8 @@ def mwa_client():
         t.join()
 
     if mode_full:
-        notify_thread.join()
         notify.close()
+        notify_thread.join()
 
     status_queue.put(None)
     status_thread.join()

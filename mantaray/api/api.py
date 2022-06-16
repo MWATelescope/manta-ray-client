@@ -52,9 +52,7 @@ class Notify(object):
         try:
             frame = self._ws.recv()
         except (WebSocketConnectionClosedException, WebSocketTimeoutException) as e:
-            print("Couldn't connect to WebSocket. Exiting notify thread.")
-            self.close()
-            sys.exit(0)
+            return None
         if not frame:
             return None
         return json.loads(frame)
