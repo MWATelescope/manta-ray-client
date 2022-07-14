@@ -145,12 +145,12 @@ def parse_csv(filename):
     return result
 
 
-def submit_jobs(session, jobs_to_submit, status_queue):
+def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
     submitted_jobs = []
     job_number = 0  # used to help point the user to which csv job had a submission problem
 
-    # Get the list of the users existing jobs
     existing_jobs = get_job_list(session)
+    ready_jobs = []
 
     for job in jobs_to_submit:
         job_number = job_number + 1
@@ -171,6 +171,10 @@ def submit_jobs(session, jobs_to_submit, status_queue):
             if error_code == 0:
                 status_queue.put("{0}Skipping:{1} {2}.".format(Fore.MAGENTA, Fore.RESET, error_text))
             if error_code == 2:
+                for e in existing_jobs:
+                    if e["row"]["id"] == job_id and e["row"]["job_state"] == JOB_STATE_READY_FOR_DOWNLOAD:
+                        download_queue.put(e)
+                        
                 status_queue.put("{0}Skipping:{1} {2} already queued, processing or complete.".format(Fore.MAGENTA, Fore.RESET, job_id))
         except Exception:
             print("Error submitting job #{0} from csvfile. Details below:".format(job_number))
@@ -244,7 +248,19 @@ def download_func(submit_lock,
                             Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_url,
                             Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, file_size, Fore.RESET)
                     status_queue.put(msg)
-                    session.download_file_product(job_id, file_url, file_path)
+
+                    for attempt in range(3):
+                        try:
+                            session.download_file_product(job_id, file_url, file_path)
+                        except Exception as e:
+                            pass
+                        else:
+                            break
+                    else:
+                        msg = '%sDownload Failed:%s Job id: %s%s%s' % \
+                            (Fore.RED, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
+                            Fore.RESET)
+                        status_queue.put(msg)
                 else:
                     #astro
                     astro_path = prod['path']
@@ -707,7 +723,7 @@ def mwa_client():
 
     # Take an action depending on command line options specified
     if mode_submit_only or mode_full:
-        jobs_list = submit_jobs(session, jobs_to_submit, status_queue)
+        jobs_list = submit_jobs(session, jobs_to_submit, status_queue, download_queue)
 
     elif mode_list_only:
         job_count = get_jobs_status(session, status_queue, verbose)

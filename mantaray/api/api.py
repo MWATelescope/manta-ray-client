@@ -206,5 +206,5 @@ class Session(object):
                               output_path):
 
         (file_path, headers) = urlretrieve(url, output_path)
-
+        
         return file_path
