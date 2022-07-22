@@ -98,6 +98,9 @@ def parse_row(row):
             key = val[0]
             val = val[1]
 
+            if key == '' or val == '':
+                continue
+
             if key is None or val is None:
                 raise ParseException('invalid cell format: None')
 
@@ -172,8 +175,9 @@ def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
                 status_queue.put("{0}Skipping:{1} {2}.".format(Fore.MAGENTA, Fore.RESET, error_text))
             if error_code == 2:
                 for e in existing_jobs:
-                    if e["row"]["id"] == job_id and e["row"]["job_state"] == JOB_STATE_READY_FOR_DOWNLOAD:
-                        download_queue.put(e)
+                    if e["row"]["id"] == job_id:
+                        if job_id not in submitted_jobs:
+                            submitted_jobs.append(job_id)
                         
                 status_queue.put("{0}Skipping:{1} {2} already queued, processing or complete.".format(Fore.MAGENTA, Fore.RESET, job_id))
         except Exception:
@@ -252,7 +256,7 @@ def download_func(submit_lock,
                     for attempt in range(3):
                         try:
                             session.download_file_product(job_id, file_url, file_path)
-                        except Exception as e:
+                        except (Exception, requests.exceptions.ConnectionError) as e:
                             pass
                         else:
                             break

@@ -1,13 +1,11 @@
 import os
-import sys
 import ssl
 import json
 import requests
 from urllib.request import urlretrieve
-from urllib.parse import urlparse
 
 try:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlparse
 except:
     from urllib import urlencode
 
@@ -51,7 +49,7 @@ class Notify(object):
     def recv(self):
         try:
             frame = self._ws.recv()
-        except (WebSocketConnectionClosedException, WebSocketTimeoutException) as e:
+        except (WebSocketConnectionClosedException, WebSocketTimeoutException, OSError) as e:
             return None
         if not frame:
             return None
@@ -205,6 +203,11 @@ class Session(object):
                               url,
                               output_path):
 
-        (file_path, headers) = urlretrieve(url, output_path)
+        with requests.get(url, stream=True, timeout=10) as r:
+            r.raise_for_status()
+
+            with open(output_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
         
-        return file_path
+        return output_path
