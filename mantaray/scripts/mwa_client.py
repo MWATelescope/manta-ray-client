@@ -131,7 +131,7 @@ def parse_row(row):
 
 def parse_csv(filename):
     result = []
-    with open(filename, 'rU') as csvfile:
+    with open(filename, 'r') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             if not row:
