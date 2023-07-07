@@ -1,3 +1,4 @@
 requests>=2.18.3
 websocket_client
 colorama
+urllib3==1.26.8
