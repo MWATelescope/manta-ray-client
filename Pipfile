@@ -9,6 +9,7 @@ verify_ssl = true
 requests = ">=2.18.3"
 colorama = "*"
 websocket_client = "*"
+urllib3 = ">=1.26.8"
 
 [requires]
 python_version = "3.8"
