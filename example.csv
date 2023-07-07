@@ -32,18 +32,17 @@
 #
 # Example 1: Conversion Job (uvfits output)
 #            This will produce a uvfits file which:
-#            * has been averaged to 80kHz fine channels (freqres)
-#            * has been averaged to 10 seconds (timeres)
-#            * has the first and last 80kHz edges flagged (edgewidth)
-#            * will continue even if one or more of the gpubox files (i.e. the coarse channels) are missing (allowmissing)
-#            * will flag the centre fine channel of each coarse channel (flagdcchannels)
+#            * has been averaged to 80kHz fine channels (avg_freq_res)
+#            * has been averaged to 10 seconds (avg_time_res)
+#            * has the first and last 80kHz edges flagged (flag_edge_width)
+#            * will not flag any RFI (no_rfi)
 #
-obs_id=1104585920, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=uvfits, allowmissing=true, flagdcchannels=true
+obs_id=1104585920, job_type=c, avg_time_res=10, avg_freq_res=80, flag_edge_width=80, output=uvfits, no_rfi=true
 
 #
 # Example 2: Conversion Job (CASA measurement set output)
 #            Same as Example 1 but we will get a CASA measurement set as output, and we will ask for it to be calibrated
-obs_id=1104585920, job_type=c, timeres=10, freqres=80, edgewidth=80, conversion=ms, calibrate=true, allowmissing=true, flagdcchannels=true
+obs_id=1104585920, job_type=c, avg_time_res=10, avg_freq_res=80, flag_edge_width=80, output=ms, no_rfi=true, apply_di_cal=true
 
 #
 # Example 3: Download Job (metadata files)
