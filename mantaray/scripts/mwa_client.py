@@ -32,16 +32,24 @@ JOB_TYPE_VALUES = {
     1: "download visibilities",
     2: "download metadata",
     3: "download_voltage",  # not implemented
-    4: "cancel job"
+    4: "cancel job",
 }
 
-class Result(object):
 
-    def __init__(self, result_job_id, result_obs_id, result_colour_message, result_no_colour_message):
+class Result(object):
+    def __init__(
+        self,
+        result_job_id,
+        result_obs_id,
+        result_colour_message,
+        result_no_colour_message,
+    ):
         self._job_id = result_job_id
         self._obs_id = result_obs_id
         self._colour_message = str(result_colour_message)
-        self._no_colour_message = "".join(str(result_no_colour_message))  # Remove any newlines
+        self._no_colour_message = "".join(
+            str(result_no_colour_message)
+        )  # Remove any newlines
 
     @property
     def job_id(self):
@@ -61,7 +69,6 @@ class Result(object):
 
 
 class ParseException(Exception):
-
     def __init__(self, *arg):
         super(ParseException, self).__init__(*arg)
         self._line_num = None
@@ -90,34 +97,34 @@ def parse_row(row):
         params = dict()
         for cell in row:
             cell = cell.replace(" ", "")
-            val = cell.split('=')
+            val = cell.split("=")
 
             if len(val) != 2:
-                raise ParseException('invalid cell format, must be key=value')
+                raise ParseException("invalid cell format, must be key=value")
 
             key = val[0]
             val = val[1]
 
-            if key == '' or val == '':
+            if key == "" or val == "":
                 continue
 
             if key is None or val is None:
-                raise ParseException('invalid cell format: None')
+                raise ParseException("invalid cell format: None")
 
-            if key == 'job_type':
-                if val == 'c':
-                    job_type = 'submit_conversion_job_direct'
-                elif val == 'd':
-                    job_type = 'submit_download_job_direct'
-                elif val == 'v':
-                    job_type = 'submit_voltage_job_direct'
+            if key == "job_type":
+                if val == "c":
+                    job_type = "submit_conversion_job_direct"
+                elif val == "d":
+                    job_type = "submit_download_job_direct"
+                elif val == "v":
+                    job_type = "submit_voltage_job_direct"
                 else:
-                    raise ParseException('unknown job_type')
+                    raise ParseException("unknown job_type")
             else:
                 params[key] = val
 
         if job_type is None:
-            raise ParseException('job_type cell not defined')
+            raise ParseException("job_type cell not defined")
 
         # check parameters for each job type: create a validate function in api
 
@@ -131,12 +138,12 @@ def parse_row(row):
 
 def parse_csv(filename):
     result = []
-    with open(filename, 'r') as csvfile:
+    with open(filename, "r") as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             if not row:
                 continue
-            if row[0].strip().startswith('#'):
+            if row[0].strip().startswith("#"):
                 continue
             try:
                 result.append(parse_row(row))
@@ -167,34 +174,42 @@ def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
         except requests.exceptions.HTTPError as re:
             status_code = re.response.status_code
             response_dict = json.loads(re.response.text)
-            error_code = response_dict.get('error_code')
-            error_text = response_dict.get('error')
-            job_id = response_dict.get('job_id')
+            error_code = response_dict.get("error_code")
+            error_text = response_dict.get("error")
+            job_id = response_dict.get("job_id")
 
             if error_code == 0:
-                status_queue.put("{0}Skipping:{1} {2}.".format(Fore.MAGENTA, Fore.RESET, error_text))
+                status_queue.put(
+                    "{0}Skipping:{1} job #{2} - {3}.".format(
+                        Fore.MAGENTA, Fore.RESET, job_number, error_text
+                    )
+                )
             if error_code == 2:
                 for e in existing_jobs:
                     if e["row"]["id"] == job_id:
                         if job_id not in submitted_jobs:
                             submitted_jobs.append(job_id)
-                        
-                status_queue.put("{0}Skipping:{1} {2} already queued, processing or complete.".format(Fore.MAGENTA, Fore.RESET, job_id))
+
+                status_queue.put(
+                    "{0}Skipping:{1} {2} already queued, processing or"
+                    " complete.".format(Fore.MAGENTA, Fore.RESET, job_id)
+                )
         except Exception:
-            print("Error submitting job #{0} from csvfile. Details below:".format(job_number))
+            print(
+                "Error submitting job #{0} from csvfile. Details below:"
+                .format(job_number)
+            )
             raise
         else:
-            new_job_id = job_response['job_id']
-            status_queue.put('Submitted job: %s ' % (new_job_id,))
+            new_job_id = job_response["job_id"]
+            status_queue.put("Submitted job: %s " % (new_job_id,))
 
             submitted_jobs.append(new_job_id)
 
     return submitted_jobs
 
 
-def _remove_submitted(submit_lock,
-                      submitted_jobs,
-                      job_id):
+def _remove_submitted(submit_lock, submitted_jobs, job_id):
     try:
         with submit_lock:
             submitted_jobs.remove(job_id)
@@ -210,29 +225,31 @@ def uri_validator(product):
         return False
 
 
-def download_func(submit_lock,
-                  submitted_jobs,
-                  download_queue,
-                  result_queue,
-                  status_queue,
-                  session,
-                  output_dir):
+def download_func(
+    submit_lock,
+    submitted_jobs,
+    download_queue,
+    result_queue,
+    status_queue,
+    session,
+    output_dir,
+):
     while True:
         item = download_queue.get()
         if not item:
             break
 
-        job_id = int(item['row']['id'])
-        obs_id = item['row']['job_params']['obs_id']
-        products = item['row']['product']['files']
+        job_id = int(item["row"]["id"])
+        obs_id = item["row"]["job_params"]["obs_id"]
+        products = item["row"]["product"]["files"]
 
         for prod in products:
             try:
-                delivery = prod['type']
-                file_size = prod['size']
-                if delivery == 'acacia':
-                    file_sha1 = prod['sha1']
-                    file_url = prod['url']
+                delivery = prod["type"]
+                file_size = prod["size"]
+                if delivery == "acacia":
+                    file_sha1 = prod["sha1"]
+                    file_url = prod["url"]
 
                     parsed_url = urlparse(file_url)
                     file_name = os.path.basename(parsed_url.path)
@@ -240,58 +257,127 @@ def download_func(submit_lock,
 
                     if os.path.isfile(file_path):
                         if os.path.getsize(file_path) == file_size:
-                            msg = '%sDownload complete:%s Job id: %s%s%s file: %s%s%s server-sha1: %s%s%s' % \
-                                    (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_path,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_sha1, Fore.RESET)
+                            msg = (
+                                "%sDownload complete:%s Job id: %s%s%s file:"
+                                " %s%s%s server-sha1: %s%s%s"
+                                % (
+                                    Fore.GREEN,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    job_id,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    file_path,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    file_sha1,
+                                    Fore.RESET,
+                                )
+                            )
                             status_queue.put(msg)
                             continue
 
-                    msg = '%sDownloading:%s Job id: %s%s%s file: %s%s%s size: %s%s%s bytes' % \
-                            (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                            Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, file_url,
-                            Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT, file_size, Fore.RESET)
+                    msg = (
+                        "%sDownloading:%s Job id: %s%s%s file: %s%s%s size:"
+                        " %s%s%s bytes"
+                        % (
+                            Fore.MAGENTA,
+                            Fore.RESET,
+                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                            job_id,
+                            Fore.RESET,
+                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                            file_url,
+                            Fore.RESET,
+                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                            file_size,
+                            Fore.RESET,
+                        )
+                    )
                     status_queue.put(msg)
 
                     for attempt in range(3):
                         try:
-                            session.download_file_product(job_id, file_url, file_path)
-                        except (Exception, requests.exceptions.ConnectionError) as e:
+                            session.download_file_product(
+                                job_id, file_url, file_path
+                            )
+                        except (
+                            Exception,
+                            requests.exceptions.ConnectionError,
+                        ) as e:
                             pass
                         else:
                             break
                     else:
-                        msg = '%sDownload Failed:%s Job id: %s%s%s' % \
-                            (Fore.RED, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                            Fore.RESET)
+                        msg = "%sDownload Failed:%s Job id: %s%s%s" % (
+                            Fore.RED,
+                            Fore.RESET,
+                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                            job_id,
+                            Fore.RESET,
+                        )
                         status_queue.put(msg)
                 else:
-                    #astro
-                    astro_path = prod['path']
+                    # astro
+                    astro_path = prod["path"]
 
                     if os.path.isdir(astro_path):
-                        #Astro folder exists on current system
-                        output_path = os.path.join(output_dir, os.path.basename(astro_path))
+                        # Astro folder exists on current system
+                        output_path = os.path.join(
+                            output_dir, os.path.basename(astro_path)
+                        )
                         if os.path.isdir(output_path):
-                            #Astro folder has already been moved to output_dir
-                            msg = '%sDownload Complete:%s Job id: %s%s%s file: %s%s%s' % \
-                                    (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, output_path, Fore.RESET)
+                            # Astro folder has already been moved to output_dir
+                            msg = (
+                                "%sDownload Complete:%s Job id: %s%s%s file:"
+                                " %s%s%s"
+                                % (
+                                    Fore.GREEN,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    job_id,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    output_path,
+                                    Fore.RESET,
+                                )
+                            )
                             status_queue.put(msg)
                             continue
                         else:
-                            #Astro folder has not been moved to output_dir yet
-                            msg = '%sCopying job to directory:%s Job id: %s%s%s file: %s%s%s' % \
-                                    (Fore.MAGENTA, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                    Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, output_path, Fore.RESET)
+                            # Astro folder has not been moved to output_dir yet
+                            msg = (
+                                "%sCopying job to directory:%s Job id: %s%s%s"
+                                " file: %s%s%s"
+                                % (
+                                    Fore.MAGENTA,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    job_id,
+                                    Fore.RESET,
+                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                    output_path,
+                                    Fore.RESET,
+                                )
+                            )
                             status_queue.put(msg)
                             shutil.move(astro_path, output_dir)
                             continue
                     else:
-                        #Astro folder does not exist on current system. Let te user know it's ready and exit
-                        msg = '%sReady on /astro:%s Job id: %s%s%s file: %s%s%s' % \
-                                (Fore.GREEN, Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, job_id,
-                                Fore.RESET, Fore.LIGHTWHITE_EX+Style.BRIGHT, astro_path, Fore.RESET)
+                        # Astro folder does not exist on current system. Let te user know it's ready and exit
+                        msg = (
+                            "%sReady on /astro:%s Job id: %s%s%s file: %s%s%s"
+                            % (
+                                Fore.GREEN,
+                                Fore.RESET,
+                                Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                job_id,
+                                Fore.RESET,
+                                Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                                astro_path,
+                                Fore.RESET,
+                            )
+                        )
                         status_queue.put(msg)
                         continue
 
@@ -299,9 +385,7 @@ def download_func(submit_lock,
                 result_queue.put(Result(job_id, obs_id, e, e))
                 continue
 
-        _remove_submitted(submit_lock,
-                          submitted_jobs,
-                          job_id)
+        _remove_submitted(submit_lock, submitted_jobs, job_id)
 
 
 def status_func(status_queue):
@@ -314,35 +398,36 @@ def status_func(status_queue):
         sys.stdout.flush()
 
 
-def notify_func(notify,
-                submit_lock,
-                submitted_jobs,
-                download_queue,
-                result_queue,
-                status_queue,
-                verbose):
-
+def notify_func(
+    notify,
+    submit_lock,
+    submitted_jobs,
+    download_queue,
+    result_queue,
+    status_queue,
+    verbose,
+):
     while True:
         item = notify.recv()
         if not item:
             result_queue.put(None)
             break
 
-        action = item['action']
-        job_id = int(item['row']['id'])
-        obs_id = item['row']['job_params']['obs_id']
-        job_state = item['row']['job_state']
+        action = item["action"]
+        job_id = int(item["row"]["id"])
+        obs_id = item["row"]["job_params"]["obs_id"]
+        job_state = item["row"]["job_state"]
 
         msg = get_status_message(item, verbose, True)
-        no_color_msg = get_status_message(item, verbose, False)  # get uncolorised output for error file
+        no_color_msg = get_status_message(
+            item, verbose, False
+        )  # get uncolorised output for error file
 
         with submit_lock:
-            if action == 'DELETE':
+            if action == "DELETE":
                 status_queue.put(msg)
 
-                _remove_submitted(submit_lock,
-                                  submitted_jobs,
-                                  job_id)
+                _remove_submitted(submit_lock, submitted_jobs, job_id)
                 continue
 
             if job_id in submitted_jobs:
@@ -360,47 +445,50 @@ def notify_func(notify,
                 elif job_state == JOB_STATE_ERROR:
                     result_queue.put(Result(job_id, obs_id, msg, no_color_msg))
 
-                    _remove_submitted(submit_lock,
-                                      submitted_jobs,
-                                      job_id)
+                    _remove_submitted(submit_lock, submitted_jobs, job_id)
 
                 elif job_state == JOB_STATE_EXPIRED:
                     result_queue.put(Result(job_id, obs_id, msg, no_color_msg))
 
-                    _remove_submitted(submit_lock,
-                                      submitted_jobs,
-                                      job_id)
+                    _remove_submitted(submit_lock, submitted_jobs, job_id)
 
                 elif job_state == JOB_STATE_CANCELLED:
                     # do not consider cancelled as an error
                     status_queue.put(msg)
 
-                    _remove_submitted(submit_lock,
-                                      submitted_jobs,
-                                      job_id)
+                    _remove_submitted(submit_lock, submitted_jobs, job_id)
 
 
 def get_job_summary(job_id, obs_id, job_type_desc, use_colour):
     if use_colour:
-        return '%sJob id: %s%s %sObs id: %s%s%s type: %s%s%s' % (Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                                                 job_id,
-                                                                 Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                                                 obs_id,
-                                                                 Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                                                 job_type_desc,
-                                                                 Fore.RESET)
+        return "%sJob id: %s%s %sObs id: %s%s%s type: %s%s%s" % (
+            Fore.RESET,
+            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+            job_id,
+            Fore.RESET,
+            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+            obs_id,
+            Fore.RESET,
+            Fore.LIGHTWHITE_EX + Style.BRIGHT,
+            job_type_desc,
+            Fore.RESET,
+        )
     else:
-        return 'Job id: %s Obs id: %s type: %s' % (job_id, obs_id, job_type_desc)
+        return "Job id: %s Obs id: %s type: %s" % (
+            job_id,
+            obs_id,
+            job_type_desc,
+        )
 
 
 def get_status_message(item, verbose, use_colour):
     # Format the status message
-    action = item['action']
-    job_id = int(item['row']['id'])
-    job_state = item['row']['job_state']
-    job_type = item['row']['job_type']
-    job_params = item['row']['job_params']
-    error_text = item['row']['error_text']
+    action = item["action"]
+    job_id = int(item["row"]["id"])
+    job_state = item["row"]["job_state"]
+    job_type = item["row"]["job_type"]
+    job_params = item["row"]["job_params"]
+    error_text = item["row"]["error_text"]
 
     job_type_desc = JOB_TYPE_VALUES.get(job_type)
     obs_id = job_params["obs_id"]
@@ -409,69 +497,93 @@ def get_status_message(item, verbose, use_colour):
 
     if verbose:
         if use_colour:
-            msg = msg + '%s typeid: %s%s%s params: %s%s%s' % (Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                                              job_type,
-                                                              Fore.RESET, Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                                              job_params,
-                                                              Fore.RESET)
+            msg = msg + "%s typeid: %s%s%s params: %s%s%s" % (
+                Fore.RESET,
+                Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                job_type,
+                Fore.RESET,
+                Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                job_params,
+                Fore.RESET,
+            )
         else:
-            msg = msg + ' typeid: %s params: %s' % (job_type, job_params)
+            msg = msg + " typeid: %s params: %s" % (job_type, job_params)
 
-    if action == 'DELETE':
+    if action == "DELETE":
         if use_colour:
-            msg = "%s%s: %s" % (Fore.RED, 'Deleted', msg)
+            msg = "%s%s: %s" % (Fore.RED, "Deleted", msg)
         else:
-            msg = "%s: %s" % ('Deleted', msg)
+            msg = "%s: %s" % ("Deleted", msg)
     else:
         if job_state == JOB_STATE_QUEUED:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.MAGENTA, 'Queued', msg)
+                msg = "%s%s: %s" % (Fore.MAGENTA, "Queued", msg)
             else:
-                msg = "%s: %s" % ('Queued', msg)
+                msg = "%s: %s" % ("Queued", msg)
 
         elif job_state == JOB_STATE_PROCESSING:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, 'Processing', msg)
+                msg = "%s%s: %s" % (Fore.BLUE, "Processing", msg)
             else:
-                msg = "%s: %s" % ('Processing', msg)
+                msg = "%s: %s" % ("Processing", msg)
 
         elif job_state == JOB_STATE_READY_FOR_DOWNLOAD:
             # Get the products and file sizes
-            products = item['row']['product']['files']
+            products = item["row"]["product"]["files"]
             total_size = 0
 
             # loop through any products and get their size in bytes
             for prod in products:
-                file_size = int(prod['size'])
+                file_size = int(prod["size"])
                 total_size = total_size + file_size
 
-            if products[0]['type'] == 'astro': #No hash, must be astro job
+            if products[0]["type"] == "astro":  # No hash, must be astro job
                 if use_colour:
-                    msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (Fore.GREEN, 'Ready on /astro', msg, Fore.RESET,
-                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, products[0]['path'], products[0]['size'])
+                    msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (
+                        Fore.GREEN,
+                        "Ready on /astro",
+                        msg,
+                        Fore.RESET,
+                        Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                        products[0]["path"],
+                        products[0]["size"],
+                    )
                 else:
-                    msg = "%s: path: %s, size: %s bytes" % ('Ready on /astro', products[0]['path'], products[0]['size'])
+                    msg = "%s: path: %s, size: %s bytes" % (
+                        "Ready on /astro",
+                        products[0]["path"],
+                        products[0]["size"],
+                    )
             else:
                 if use_colour:
-                    msg = "%s%s: %s %ssize: %s%s bytes" % (Fore.MAGENTA, 'Ready for Download', msg, Fore.RESET,
-                                                        Fore.LIGHTWHITE_EX + Style.BRIGHT, total_size)
+                    msg = "%s%s: %s %ssize: %s%s bytes" % (
+                        Fore.MAGENTA,
+                        "Ready for Download",
+                        msg,
+                        Fore.RESET,
+                        Fore.LIGHTWHITE_EX + Style.BRIGHT,
+                        total_size,
+                    )
                 else:
-                    msg = "%s: size: %s bytes" % ('Ready for Download', total_size)
+                    msg = "%s: size: %s bytes" % (
+                        "Ready for Download",
+                        total_size,
+                    )
 
         elif job_state == JOB_STATE_ERROR:
             if use_colour:
-                msg = "%s%s: %s %s" % (Fore.RED, 'Error', error_text, msg)
+                msg = "%s%s: %s %s" % (Fore.RED, "Error", error_text, msg)
             else:
-                msg = "%s: %s" % ('Error', error_text)
+                msg = "%s: %s" % ("Error", error_text)
 
         elif job_state == JOB_STATE_EXPIRED:
-            msg = "%s: %s" % ('Expired', msg)
+            msg = "%s: %s" % ("Expired", msg)
 
         elif job_state == JOB_STATE_CANCELLED:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.RED, 'Cancelled', msg)
+                msg = "%s%s: %s" % (Fore.RED, "Cancelled", msg)
             else:
-                msg = "%s: %s" % ('Cancelled', msg)
+                msg = "%s: %s" % ("Cancelled", msg)
 
     return msg
 
@@ -491,7 +603,9 @@ def get_job_list(session):
 
     except Exception as e:
         # Error getting job list
-        raise Exception("Could not obtain jobs list from server: {0}".format(e))
+        raise Exception(
+            "Could not obtain jobs list from server: {0}".format(e)
+        )
 
 
 def get_jobs_status(session, status_queue, verbose):
@@ -506,16 +620,18 @@ def get_jobs_status(session, status_queue, verbose):
     return len(jobs)
 
 
-def enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, verbose):
+def enqueue_all_ready_to_download_jobs(
+    session, download_queue, status_queue, verbose
+):
     submitted_jobs = []
     jobs = get_job_list(session)
 
     for j in jobs:
-        job_state = j['row']['job_state']
+        job_state = j["row"]["job_state"]
 
         # Check is ready for download
         if job_state == JOB_STATE_READY_FOR_DOWNLOAD:
-            job_id = j['row']['id']
+            job_id = j["row"]["id"]
             submitted_jobs.append(job_id)
             msg = get_status_message(j, verbose, True)
             status_queue.put(msg)
@@ -524,14 +640,16 @@ def enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, ve
     return submitted_jobs
 
 
-def check_job_is_downloadable_and_enqueue(session, download_queue, result_queue, job_id):
+def check_job_is_downloadable_and_enqueue(
+    session, download_queue, result_queue, job_id
+):
     submitted_jobs = []
     jobs = get_job_list(session)
     found_job = None
 
     # Check this is job owned by the user
     for j in jobs:
-        j_job_id = int(j['row']['id'])
+        j_job_id = int(j["row"]["id"])
 
         if j_job_id == int(job_id):
             found_job = j
@@ -539,14 +657,22 @@ def check_job_is_downloadable_and_enqueue(session, download_queue, result_queue,
 
     if found_job:
         # Check is ready for download
-        job_state = found_job['row']['job_state']
-        obs_id = found_job['row']['job_params']['obs_id']
-        job_type_desc = JOB_TYPE_VALUES.get(found_job['row']['job_type'])
+        job_state = found_job["row"]["job_state"]
+        obs_id = found_job["row"]["job_params"]["obs_id"]
+        job_type_desc = JOB_TYPE_VALUES.get(found_job["row"]["job_type"])
 
         if job_state != JOB_STATE_READY_FOR_DOWNLOAD:
-            colour_msg = "{0}Error: Invalid job state- job not ready for download{1}; {2}".format(
-                Fore.RED, Fore.RESET, get_job_summary(job_id, obs_id, job_type_desc, True))
-            no_colour_msg = "Error: Invalid job state- job not ready for download"
+            colour_msg = (
+                "{0}Error: Invalid job state- job not ready for"
+                " download{1}; {2}".format(
+                    Fore.RED,
+                    Fore.RESET,
+                    get_job_summary(job_id, obs_id, job_type_desc, True),
+                )
+            )
+            no_colour_msg = (
+                "Error: Invalid job state- job not ready for download"
+            )
             result_queue.put(Result(job_id, obs_id, colour_msg, no_colour_msg))
 
             return []
@@ -558,9 +684,14 @@ def check_job_is_downloadable_and_enqueue(session, download_queue, result_queue,
 
     else:
         # not a valid job
-        colour_msg = "{0}Error: Job Id {1} is not a valid job, has expired or is not owned by you.{2}".format(
-            Fore.RED, job_id, Fore.RESET)
-        no_colour_msg = "Error: Job Id {0} is not a valid job, has expired or is not owned by you.".format(job_id)
+        colour_msg = (
+            "{0}Error: Job Id {1} is not a valid job, has expired or is not"
+            " owned by you.{2}".format(Fore.RED, job_id, Fore.RESET)
+        )
+        no_colour_msg = (
+            "Error: Job Id {0} is not a valid job, has expired or is not owned"
+            " by you.".format(job_id)
+        )
         result_queue.put(Result(job_id, "N/A", colour_msg, no_colour_msg))
 
         return []
@@ -572,7 +703,10 @@ class ParseDownloadOnly(argparse.Action):
         # 0                == all jobs
         # Positive integer == specific job
         # all|ALL,etc      == all jobs, same as 0
-        msg = "'{0}' is not valid for -w / --download-only. Try a Job Id, or 'all' for all jobs.".format(values)
+        msg = (
+            "'{0}' is not valid for -w / --download-only. Try a Job Id, or"
+            " 'all' for all jobs.".format(values)
+        )
 
         try:
             if int(values) >= 0:
@@ -591,56 +725,98 @@ def mwa_client():
     version_string = get_pretty_version_string()
     print(version_string)
 
-    epi = "\nExamples: "\
-          "\nmwa_client -c csvfile -d destdir           " \
-          "Submit jobs in the csv file, monitor them, then download the files, then exit" \
-          "\nmwa_client -c csvfile -s                   " \
-          "Submit jobs in the csv file, then exit" \
-          "\nmwa_client -d destdir -w JOBID             " \
-          "Download the job id (assuming it is ready to download), then exit" \
-          "\nmwa_client -d destdir -w all               " \
-          "Download any ready to download jobs, then exit" \
-          "\nmwa_client -d destdir -w all -e error_file " \
-          "Download any ready to download jobs, then exit, writing any errors to error_file" \
-          "\nmwa_client -l                              " \
-          "List all of your jobs and their status, then exit" \
+    epi = (
+        "\nExamples: \nmwa_client -c csvfile -d destdir           Submit jobs"
+        " in the csv file, monitor them, then download the files, then"
+        " exit\nmwa_client -c csvfile -s                   Submit jobs in the"
+        " csv file, then exit\nmwa_client -d destdir -w JOBID            "
+        " Download the job id (assuming it is ready to download), then"
+        " exit\nmwa_client -d destdir -w all               Download any ready"
+        " to download jobs, then exit\nmwa_client -d destdir -w all -e"
+        " error_file Download any ready to download jobs, then exit, writing"
+        " any errors to error_file\nmwa_client -l                             "
+        " List all of your jobs and their status, then exit"
+    )
+    desc = (
+        "{0}\n==============================\n\nThe mwa_client is a"
+        " command-line tool for submitting, monitoring and \ndownloading jobs"
+        " from the MWA ASVO (https://asvo.mwatelescope.org). \nPlease see"
+        " README.md for csv file format and other details.".format(
+            version_string
+        )
+    )
 
-    desc = "{0}\n==============================\n\n" \
-           "The mwa_client is a command-line tool for submitting, monitoring and \n" \
-           "downloading jobs from the MWA ASVO (https://asvo.mwatelescope.org). \n" \
-           "Please see README.md for csv file format and other details.".format(version_string)
-
-    parser = argparse.ArgumentParser(description=desc, epilog=epi, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=desc,
+        epilog=epi,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     group = parser.add_mutually_exclusive_group()
 
-    group.add_argument("-s", "--submit-only", action="store_true", dest="submit_only",
-                       help="submit job(s) from csv file then exit (-d is ignored)", default=False)
+    group.add_argument(
+        "-s",
+        "--submit-only",
+        action="store_true",
+        dest="submit_only",
+        help="submit job(s) from csv file then exit (-d is ignored)",
+        default=False,
+    )
 
-    group.add_argument("-l", "--list-only", action="store_true", dest="list_only",
-                       help="List the user's active job(s) and exit immediately (-s, -c & -d are ignored)",
-                       default=False)
+    group.add_argument(
+        "-l",
+        "--list-only",
+        action="store_true",
+        dest="list_only",
+        help=(
+            "List the user's active job(s) and exit immediately (-s, -c & -d"
+            " are ignored)"
+        ),
+        default=False,
+    )
 
-    group.add_argument("-w", "--download-only", action=ParseDownloadOnly, dest="download_job_id",
-                       help="Download the job id (-w DOWNLOAD_JOB_ID), if it is ready; or all downloadable jobs "
-                            "(-w all | -w 0), then exit (-s, -c & -l are ignored)")
+    group.add_argument(
+        "-w",
+        "--download-only",
+        action=ParseDownloadOnly,
+        dest="download_job_id",
+        help=(
+            "Download the job id (-w DOWNLOAD_JOB_ID), if it is ready; or all"
+            " downloadable jobs (-w all | -w 0), then exit (-s, -c & -l are"
+            " ignored)"
+        ),
+    )
 
-    parser.add_argument("-c", "--csv", dest="csvfile",
-                        help="csv job file", metavar="FILE")
+    parser.add_argument(
+        "-c", "--csv", dest="csvfile", help="csv job file", metavar="FILE"
+    )
 
-    parser.add_argument("-d", "--dir", dest="outdir",
-                        help="download directory", metavar="DIR")
+    parser.add_argument(
+        "-d", "--dir", dest="outdir", help="download directory", metavar="DIR"
+    )
 
-    parser.add_argument("-e", "--error-file", "--errfile", dest="errfile",
-                        help="Write errors in json format to an error file", default=None)
+    parser.add_argument(
+        "-e",
+        "--error-file",
+        "--errfile",
+        dest="errfile",
+        help="Write errors in json format to an error file",
+        default=None,
+    )
 
-    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose",
-                        help="verbose output", default=False)
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        help="verbose output",
+        default=False,
+    )
 
     args = parser.parse_args()
 
     # Figure out what mode we are running in, based on the command line args
-    mode_submit_only = (args.submit_only is True)
-    mode_list_only = (args.list_only is True)
+    mode_submit_only = args.submit_only is True
+    mode_list_only = args.list_only is True
     mode_download_only = not (args.download_job_id is None)
 
     # full mode is the default- submit, monitor, download
@@ -650,50 +826,61 @@ def mwa_client():
 
     # Check that we specify a csv file if need one
     if args.csvfile is None and (mode_submit_only or mode_full):
-        raise Exception('Error: csvfile not specified')
+        raise Exception("Error: csvfile not specified")
 
     # Check the -d parameter is valid
-    outdir = './'
+    outdir = "./"
     if args.outdir:
         outdir = args.outdir
 
         if not os.path.isdir(outdir):
-            raise Exception("Error: Output directory {0} is invalid.".format(outdir))
+            raise Exception(
+                "Error: Output directory {0} is invalid.".format(outdir)
+            )
 
-    host = os.environ.get('MWA_ASVO_HOST', 'asvo.mwatelescope.org')
+    host = os.environ.get("MWA_ASVO_HOST", "asvo.mwatelescope.org")
     if not host:
-        raise Exception('[ERROR] MWA_ASVO_HOST env variable not defined')
+        raise Exception("[ERROR] MWA_ASVO_HOST env variable not defined")
 
-    port = os.environ.get('MWA_ASVO_PORT', '443')
+    port = os.environ.get("MWA_ASVO_PORT", "443")
     if not port:
-        raise Exception('[ERROR] MWA_ASVO_PORT env variable not defined')
+        raise Exception("[ERROR] MWA_ASVO_PORT env variable not defined")
 
-    https = os.environ.get('MWA_ASVO_HTTPS', '1')
+    https = os.environ.get("MWA_ASVO_HTTPS", "1")
     if not https:
-        raise Exception('[ERROR] MWA_ASVO_SSL env variable not defined')
+        raise Exception("[ERROR] MWA_ASVO_SSL env variable not defined")
 
-    user = os.environ.get('ASVO_USER', None)
+    user = os.environ.get("ASVO_USER", None)
     if user:
-        print("[WARNING] ASVO_USER environment variable is no longer used by the mwa_client- "
-              "you should remove it from your .profile/.bashrc/startup scripts.")
+        print(
+            "[WARNING] ASVO_USER environment variable is no longer used by the"
+            " mwa_client- you should remove it from your"
+            " .profile/.bashrc/startup scripts."
+        )
 
-    passwd = os.environ.get('ASVO_PASS', None)
+    passwd = os.environ.get("ASVO_PASS", None)
     if passwd:
-        print("[WARNING] ASVO_PASS environment variable is no longer used by the mwa_client- "
-              "you should remove it from your .profile/.bashrc/startup scripts.")
+        print(
+            "[WARNING] ASVO_PASS environment variable is no longer used by the"
+            " mwa_client- you should remove it from your"
+            " .profile/.bashrc/startup scripts."
+        )
 
-    api_key = os.environ.get('MWA_ASVO_API_KEY', None)
+    api_key = os.environ.get("MWA_ASVO_API_KEY", None)
     if not api_key:
-        raise Exception('[ERROR] MWA_ASVO_API_KEY env variable not defined. Log in to the MWA ASVO web site- '
-                        'https://asvo.mwatelescope.org/settings to obtain your API KEY, then place the following '
-                        'into your .profile/.bashrc/startup scripts (where xxx is your API key):\n'
-                        '   export MWA_ASVO_API_KEY=xxx\n')
+        raise Exception(
+            "[ERROR] MWA_ASVO_API_KEY env variable not defined. Log in to the"
+            " MWA ASVO web site- https://asvo.mwatelescope.org/settings to"
+            " obtain your API KEY, then place the following into your"
+            " .profile/.bashrc/startup scripts (where xxx is your API key):\n "
+            "  export MWA_ASVO_API_KEY=xxx\n"
+        )
 
     ssl_verify = os.environ.get("SSL_VERIFY", "0")
     if ssl_verify == "1":
-        sslopt = {'cert_reqs': ssl.CERT_REQUIRED}
+        sslopt = {"cert_reqs": ssl.CERT_REQUIRED}
     else:
-        sslopt = {'cert_reqs': ssl.CERT_NONE}
+        sslopt = {"cert_reqs": ssl.CERT_NONE}
 
     # Setup status thread. This will be used to update stdout with status info
     status_queue = Queue()
@@ -715,10 +902,7 @@ def mwa_client():
         if len(jobs_to_submit) == 0:
             raise Exception("Error: No jobs to submit")
 
-    params = (https,
-              host,
-              port,
-              api_key)
+    params = (https, host, port, api_key)
 
     status_queue.put("Connecting to MWA ASVO ({0}:{1})...".format(host, port))
     session = Session.login(*params)
@@ -727,7 +911,9 @@ def mwa_client():
 
     # Take an action depending on command line options specified
     if mode_submit_only or mode_full:
-        jobs_list = submit_jobs(session, jobs_to_submit, status_queue, download_queue)
+        jobs_list = submit_jobs(
+            session, jobs_to_submit, status_queue, download_queue
+        )
 
     elif mode_list_only:
         job_count = get_jobs_status(session, status_queue, verbose)
@@ -737,7 +923,9 @@ def mwa_client():
     elif mode_download_only:
         # JobID 0 is used to download ALL of the user's ready to download jobs
         if args.download_job_id == 0:
-            jobs_list = enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, verbose)
+            jobs_list = enqueue_all_ready_to_download_jobs(
+                session, download_queue, status_queue, verbose
+            )
 
             if len(jobs_list) == 0:
                 print("You have no jobs that are ready to download.")
@@ -747,8 +935,9 @@ def mwa_client():
                 status_thread.join()
                 return
         else:
-            jobs_list = check_job_is_downloadable_and_enqueue(session, download_queue,
-                                                              result_queue, args.download_job_id)
+            jobs_list = check_job_is_downloadable_and_enqueue(
+                session, download_queue, result_queue, args.download_job_id
+            )
 
     if mode_submit_only or mode_list_only:
         # Exit- user opted to submit only or list only
@@ -762,13 +951,18 @@ def mwa_client():
         notify = Notify.login(*params, sslopt=sslopt)
         status_queue.put("Connected to MWA ASVO Notifier")
 
-        notify_thread = Thread(target=notify_func, args=(notify,
-                                                         submit_lock,
-                                                         jobs_list,
-                                                         download_queue,
-                                                         result_queue,
-                                                         status_queue,
-                                                         verbose))
+        notify_thread = Thread(
+            target=notify_func,
+            args=(
+                notify,
+                submit_lock,
+                jobs_list,
+                download_queue,
+                result_queue,
+                status_queue,
+                verbose,
+            ),
+        )
 
         notify_thread.daemon = True
         notify_thread.start()
@@ -777,13 +971,18 @@ def mwa_client():
 
     for i in range(4):
         # Launch a download thread
-        t = Thread(target=download_func, args=(submit_lock,
-                                               jobs_list,
-                                               download_queue,
-                                               result_queue,
-                                               status_queue,
-                                               session,
-                                               outdir))
+        t = Thread(
+            target=download_func,
+            args=(
+                submit_lock,
+                jobs_list,
+                download_queue,
+                result_queue,
+                status_queue,
+                session,
+                outdir,
+            ),
+        )
         threads.append(t)
         t.daemon = True
         t.start()
@@ -798,7 +997,7 @@ def mwa_client():
         try:
             r = result_queue.get(timeout=1)
             if not r:
-                raise Exception('Error: Control connection lost, exiting')
+                raise Exception("Error: Control connection lost, exiting")
             results.append(r)
         except Empty:
             continue
@@ -828,7 +1027,7 @@ def mwa_client():
         error_file = open(args.errfile, "w")
 
     if len(results) > 0:
-        print('There were errors:')
+        print("There were errors:")
 
         json_list = []
 
@@ -837,7 +1036,13 @@ def mwa_client():
             print(r.colour_message)
 
             # Put results into a JSON object
-            json_list.append({'job_id': r.job_id, 'obs_id': r.obs_id, 'result': r.no_colour_message})
+            json_list.append(
+                {
+                    "job_id": r.job_id,
+                    "obs_id": r.obs_id,
+                    "result": r.no_colour_message,
+                }
+            )
 
         # If we specified an error file, write to that too
         if args.errfile:
@@ -854,14 +1059,14 @@ def mwa_client():
         if args.errfile:
             error_file.close()
 
+
 def main():
     init(autoreset=True)
 
     try:
         mwa_client()
     except ParseException as e:
-        print('Error: %s, Line num: %s' %
-              (str(e), e.line_num))
+        print("Error: %s, Line num: %s" % (str(e), e.line_num))
         sys.stdout.flush()
         sys.exit(3)
     except requests.exceptions.HTTPError as re:
@@ -877,6 +1082,7 @@ def main():
         sys.stdout.flush()
         sys.exit(1)
     print("mwa_client finished successfully")
+
 
 if __name__ == "__main__":
     main()
