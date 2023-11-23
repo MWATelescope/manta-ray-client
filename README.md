@@ -187,10 +187,12 @@ Please note that some options are only available depending on the choice of prep
   * Output format.
   * `ms`: CASA measurement set.
   * `uvfits`: uvfits output.
-* `delivery:  <acacia || astro>`
+* `delivery:  <acacia || astro || scratch>` 
   * Where you would like your data to be stored
   * `acacia (default)`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
-  * `astro`: Data will be left on the /astro file system at Pawsey in /astro/\<group>/asvo/<job_id>. This option is only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
+  * `astro`: Data will be left on the /astro file system at Pawsey in /astro/\<group>/asvo/<job_id>.
+  * `scratch`:  Data will be left on the /scratch file system at Pawsey in /scratch/\<group>/asvo/<job_id>.
+  * astro and scratch options are only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
 
 ### Flags / Optional Options
 
@@ -238,20 +240,22 @@ obs_id=1110103576, job_type=c, avg_time_res=8, avg_freq_res=40, flag_edge_width=
 * `download_type: <vis_meta || vis>`
   * `vis_meta`: download visibility metadata only (metafits and RFI flags).
   * `vis`: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
-* `delivery: <acacia || astro>`
+* `delivery: <acacia || astro  || scratch>`
   * `acacia`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
-  * `astro`: Data will be left on the /astro file system at Pawsey in /astro/\<group>/asvo/<job_id>. This option is only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
-
+  * `astro`: Data will be left on the /astro file system at Pawsey in /astro/\<group>/asvo/<job_id>. 
+  * `scratch`:  Data will be left on the /scratch file system at Pawsey in /scratch/\<group>/asvo/<job_id>.
+  * astro and scratch options are only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
 #### Example lines in csv file
 
 ```csv
 obs_id=1110103576, job_type=d, download_type=vis, delivery=acacia
 obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=astro
+obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=scratch
 ```
 
 ### Voltage Job Options
 
-Note that voltage jobs will always be left on /astro, and you will therefore need a Pawsey account to submit them. Please get in contact if you're interested in accessing VCS data.
+Note that voltage jobs will always be left on /astro  or /scratch, and you will therefore need a Pawsey account to submit them. Please get in contact if you're interested in accessing VCS data.
 
 * `obs_id: <integer>`
   * Observation ID

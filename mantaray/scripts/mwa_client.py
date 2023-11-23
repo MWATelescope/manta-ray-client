@@ -318,16 +318,16 @@ def download_func(
                         )
                         status_queue.put(msg)
                 else:
-                    # astro
-                    astro_path = prod["path"]
+                    # astro or scratch
+                    delivery_path = prod["path"]
 
-                    if os.path.isdir(astro_path):
-                        # Astro folder exists on current system
+                    if os.path.isdir(delivery_path):
+                        #Folder exists on current system
                         output_path = os.path.join(
-                            output_dir, os.path.basename(astro_path)
+                            output_dir, os.path.basename(delivery_path)
                         )
                         if os.path.isdir(output_path):
-                            # Astro folder has already been moved to output_dir
+                            #Folder has already been moved to output_dir
                             msg = (
                                 "%sDownload Complete:%s Job id: %s%s%s file:"
                                 " %s%s%s"
@@ -345,36 +345,34 @@ def download_func(
                             status_queue.put(msg)
                             continue
                         else:
-                            # Astro folder has not been moved to output_dir yet
+                            #Folder has not been moved to output_dir yet
                             msg = (
-                                "%sCopying job to directory:%s Job id: %s%s%s"
-                                " file: %s%s%s"
+                                "%sCopying job to the directory:%s%s Job id: %s%s%s"
                                 % (
                                     Fore.MAGENTA,
                                     Fore.RESET,
+                                    output_path,
                                     Fore.LIGHTWHITE_EX + Style.BRIGHT,
                                     job_id,
-                                    Fore.RESET,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    output_path,
                                     Fore.RESET,
                                 )
                             )
                             status_queue.put(msg)
-                            shutil.move(astro_path, output_dir)
+                            shutil.copytree(delivery_path, output_path)
                             continue
                     else:
-                        # Astro folder does not exist on current system. Let te user know it's ready and exit
+                        #Folder does not exist on current system. Let te user know it's ready and exit
                         msg = (
-                            "%sReady on /astro:%s Job id: %s%s%s file: %s%s%s"
+                            "%sReady on /%s:%s Job id: %s%s%s file: %s%s%s"
                             % (
                                 Fore.GREEN,
+                                delivery,
                                 Fore.RESET,
                                 Fore.LIGHTWHITE_EX + Style.BRIGHT,
                                 job_id,
                                 Fore.RESET,
                                 Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                astro_path,
+                                delivery_path,
                                 Fore.RESET,
                             )
                         )
@@ -537,11 +535,12 @@ def get_status_message(item, verbose, use_colour):
                 file_size = int(prod["size"])
                 total_size = total_size + file_size
 
-            if products[0]["type"] == "astro":  # No hash, must be astro job
+            deliveryType  = products[0]["type"]
+            if deliveryType == "astro" or deliveryType == "scratch":
                 if use_colour:
                     msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (
                         Fore.GREEN,
-                        "Ready on /astro",
+                        f"Ready on /{deliveryType}",
                         msg,
                         Fore.RESET,
                         Fore.LIGHTWHITE_EX + Style.BRIGHT,
@@ -550,7 +549,7 @@ def get_status_message(item, verbose, use_colour):
                     )
                 else:
                     msg = "%s: path: %s, size: %s bytes" % (
-                        "Ready on /astro",
+                        f"Ready on /{deliveryType}",
                         products[0]["path"],
                         products[0]["size"],
                     )
