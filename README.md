@@ -6,7 +6,14 @@ Python API and helper script (mwa_client) to interact with the [MWA ASVO](https:
 
 Giant Squid is the preferred CLI client for the MWA ASVO- check it out here [Giant Squid](https://github.com/MWATelescope/giant-squid)
 
-For general help on using the MWA ASVO, please visit: [MWA ASVO wiki](https://wiki.mwatelescope.org/display/MP/Data+Access).
+For general help on using the MWA ASVO, please visit: [MWA ASVO wiki](https://mwatelescope.atlassian.net/wiki/spaces/MP/pages/24973129/Data+Access).
+
+---
+NOTE FOR HPC USERS
+
+Please read [this wiki article](https://mwatelescope.atlassian.net/wiki/spaces/MP/pages/65405030/MWA+ASVO+Use+with+HPC+Systems) if you are running manta-ray-client on HPC systemns.
+
+---
 
 * Supported Python versions:
   * Python 3.10
