@@ -28,7 +28,7 @@ mwa_client is a helper script which provides the following functions:
 * Monitor the status of your jobs
 * Download your completed jobs
 
-There are two types of MWA ASVO jobs:
+There are three types of MWA ASVO jobs:
 
 * Conversion: Average, convert and download a visibility data set (and optionally apply calibration solutions).
 * Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
@@ -152,6 +152,7 @@ optional arguments:
   -e ERRFILE, --error-file ERRFILE, --errfile ERRFILE
                         Write errors in json format to an error file
   -v, --verbose         verbose output
+  -ar, --allow-resubmit Allow resubmission of jobs
 
 ```
 

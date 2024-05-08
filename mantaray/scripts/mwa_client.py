@@ -91,7 +91,7 @@ class ParseException(Exception):
         self._row = value
 
 
-def parse_row(row):
+def parse_row(row, allow_resubmit):
     try:
         job_type = None
         params = dict()
@@ -126,6 +126,9 @@ def parse_row(row):
         if job_type is None:
             raise ParseException("job_type cell not defined")
 
+        if "allow_resubmit" not in params:
+            params["allow_resubmit"] = str(allow_resubmit).lower()
+
         # check parameters for each job type: create a validate function in api
 
         return [job_type, params]
@@ -136,7 +139,7 @@ def parse_row(row):
         raise ParseException()
 
 
-def parse_csv(filename):
+def parse_csv(filename, allow_resubmit):
     result = []
     with open(filename, "r") as csvfile:
         reader = csv.reader(csvfile)
@@ -146,12 +149,11 @@ def parse_csv(filename):
             if row[0].strip().startswith("#"):
                 continue
             try:
-                result.append(parse_row(row))
+                result.append(parse_row(row, allow_resubmit))
             except ParseException as e:
                 e.line_num = reader.line_num
                 e.row = row
                 raise e
-
     return result
 
 
@@ -597,7 +599,6 @@ def get_job_list(session):
         if result:
             for job in result:
                 jobs.append(job)
-
         return jobs
 
     except Exception as e:
@@ -811,12 +812,20 @@ def mwa_client():
         default=False,
     )
 
+    parser.add_argument(
+        "-ar",
+        "--allow-resubmit",
+        help="Allow resubmitting of jobs",
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     # Figure out what mode we are running in, based on the command line args
     mode_submit_only = args.submit_only is True
     mode_list_only = args.list_only is True
     mode_download_only = not (args.download_job_id is None)
+    allow_resubmit = args.allow_resubmit
 
     # full mode is the default- submit, monitor, download
     mode_full = not (mode_submit_only or mode_list_only or mode_download_only)
@@ -896,7 +905,7 @@ def mwa_client():
 
     jobs_to_submit = []
     if mode_submit_only or mode_full:
-        jobs_to_submit = parse_csv(args.csvfile)
+        jobs_to_submit = parse_csv(args.csvfile, allow_resubmit)
 
         if len(jobs_to_submit) == 0:
             raise Exception("Error: No jobs to submit")
