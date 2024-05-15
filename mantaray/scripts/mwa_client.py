@@ -324,12 +324,12 @@ def download_func(
                     delivery_path = prod["path"]
 
                     if os.path.isdir(delivery_path):
-                        #Folder exists on current system
+                        # Folder exists on current system
                         output_path = os.path.join(
                             output_dir, os.path.basename(delivery_path)
                         )
                         if os.path.isdir(output_path):
-                            #Folder has already been moved to output_dir
+                            # Folder has already been moved to output_dir
                             msg = (
                                 "%sDownload Complete:%s Job id: %s%s%s file:"
                                 " %s%s%s"
@@ -347,7 +347,7 @@ def download_func(
                             status_queue.put(msg)
                             continue
                         else:
-                            #Folder has not been moved to output_dir yet
+                            # Folder has not been moved to output_dir yet
                             msg = (
                                 "%sCopying job to the directory:%s%s Job id: %s%s%s"
                                 % (
@@ -363,7 +363,7 @@ def download_func(
                             shutil.copytree(delivery_path, output_path)
                             continue
                     else:
-                        #Folder does not exist on current system. Let te user know it's ready and exit
+                        # Folder does not exist on current system. Let te user know it's ready and exit
                         msg = (
                             "%sReady on /%s:%s Job id: %s%s%s file: %s%s%s"
                             % (
@@ -537,7 +537,7 @@ def get_status_message(item, verbose, use_colour):
                 file_size = int(prod["size"])
                 total_size = total_size + file_size
 
-            deliveryType  = products[0]["type"]
+            deliveryType = products[0]["type"]
             if deliveryType == "astro" or deliveryType == "scratch":
                 if use_colour:
                     msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (
@@ -815,7 +815,7 @@ def mwa_client():
     parser.add_argument(
         "-ar",
         "--allow-resubmit",
-        help="Allow resubmitting of jobs",
+        help="Will allow a job with the same parameters and an existing job in your queue in Completed, Error or Cancelled status to be resubmitted. Default is to not allow resubmission if the new job matches the parameters of an existing job in your queue.",
         action="store_true",
     )
 
