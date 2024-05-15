@@ -91,7 +91,7 @@ class ParseException(Exception):
         self._row = value
 
 
-def parse_row(row):
+def parse_row(row, allow_resubmit):
     try:
         job_type = None
         params = dict()
@@ -126,6 +126,9 @@ def parse_row(row):
         if job_type is None:
             raise ParseException("job_type cell not defined")
 
+        if "allow_resubmit" not in params:
+            params["allow_resubmit"] = str(allow_resubmit).lower()
+
         # check parameters for each job type: create a validate function in api
 
         return [job_type, params]
@@ -136,7 +139,7 @@ def parse_row(row):
         raise ParseException()
 
 
-def parse_csv(filename):
+def parse_csv(filename, allow_resubmit):
     result = []
     with open(filename, "r") as csvfile:
         reader = csv.reader(csvfile)
@@ -146,12 +149,11 @@ def parse_csv(filename):
             if row[0].strip().startswith("#"):
                 continue
             try:
-                result.append(parse_row(row))
+                result.append(parse_row(row, allow_resubmit))
             except ParseException as e:
                 e.line_num = reader.line_num
                 e.row = row
                 raise e
-
     return result
 
 
@@ -322,12 +324,12 @@ def download_func(
                     delivery_path = prod["path"]
 
                     if os.path.isdir(delivery_path):
-                        #Folder exists on current system
+                        # Folder exists on current system
                         output_path = os.path.join(
                             output_dir, os.path.basename(delivery_path)
                         )
                         if os.path.isdir(output_path):
-                            #Folder has already been moved to output_dir
+                            # Folder has already been moved to output_dir
                             msg = (
                                 "%sDownload Complete:%s Job id: %s%s%s file:"
                                 " %s%s%s"
@@ -345,7 +347,7 @@ def download_func(
                             status_queue.put(msg)
                             continue
                         else:
-                            #Folder has not been moved to output_dir yet
+                            # Folder has not been moved to output_dir yet
                             msg = (
                                 "%sCopying job to the directory:%s%s Job id: %s%s%s"
                                 % (
@@ -361,7 +363,7 @@ def download_func(
                             shutil.copytree(delivery_path, output_path)
                             continue
                     else:
-                        #Folder does not exist on current system. Let te user know it's ready and exit
+                        # Folder does not exist on current system. Let te user know it's ready and exit
                         msg = (
                             "%sReady on /%s:%s Job id: %s%s%s file: %s%s%s"
                             % (
@@ -535,7 +537,7 @@ def get_status_message(item, verbose, use_colour):
                 file_size = int(prod["size"])
                 total_size = total_size + file_size
 
-            deliveryType  = products[0]["type"]
+            deliveryType = products[0]["type"]
             if deliveryType == "astro" or deliveryType == "scratch":
                 if use_colour:
                     msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (
@@ -597,7 +599,6 @@ def get_job_list(session):
         if result:
             for job in result:
                 jobs.append(job)
-
         return jobs
 
     except Exception as e:
@@ -811,12 +812,20 @@ def mwa_client():
         default=False,
     )
 
+    parser.add_argument(
+        "-ar",
+        "--allow-resubmit",
+        help="Will allow a job with the same parameters and an existing job in your queue in Completed, Error or Cancelled status to be resubmitted. Default is to not allow resubmission if the new job matches the parameters of an existing job in your queue.",
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     # Figure out what mode we are running in, based on the command line args
     mode_submit_only = args.submit_only is True
     mode_list_only = args.list_only is True
     mode_download_only = not (args.download_job_id is None)
+    allow_resubmit = args.allow_resubmit
 
     # full mode is the default- submit, monitor, download
     mode_full = not (mode_submit_only or mode_list_only or mode_download_only)
@@ -896,7 +905,7 @@ def mwa_client():
 
     jobs_to_submit = []
     if mode_submit_only or mode_full:
-        jobs_to_submit = parse_csv(args.csvfile)
+        jobs_to_submit = parse_csv(args.csvfile, allow_resubmit)
 
         if len(jobs_to_submit) == 0:
             raise Exception("Error: No jobs to submit")
