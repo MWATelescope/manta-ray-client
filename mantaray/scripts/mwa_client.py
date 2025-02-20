@@ -19,12 +19,17 @@ from mantaray.api import Notify, Session, get_pretty_version_string
 
 
 # Constants for job states
-JOB_STATE_QUEUED = 0
-JOB_STATE_PROCESSING = 1
-JOB_STATE_READY_FOR_DOWNLOAD = 2
-JOB_STATE_ERROR = 3
-JOB_STATE_EXPIRED = 4
-JOB_STATE_CANCELLED = 5
+JOB_STATE_QUEUED = 'queued'
+JOB_STATE_WAIT_CAL = 'waitcal'
+JOB_STATE_STAGING = 'staging'
+JOB_STATE_STAGED = 'staged'
+JOB_STATE_DOWNLOADING = 'downloading'
+JOB_STATE_PREPROCESSING = 'preprocessing'
+JOB_STATE_IMAGING = 'imaging'
+JOB_STATE_DELIVERING = 'delivering'
+JOB_STATE_READY_FOR_DOWNLOAD = 'completed'
+JOB_STATE_ERROR = 'error'
+JOB_STATE_CANCELLED = 'cancelled'
 
 # Constants descriptions for job types
 JOB_TYPE_VALUES = {
@@ -433,8 +438,26 @@ def notify_func(
             if job_id in submitted_jobs:
                 if job_state == JOB_STATE_QUEUED:
                     status_queue.put(msg)
+                
+                elif job_state == JOB_STATE_WAIT_CAL:
+                    status_queue.put(msg)
+                
+                elif job_state == JOB_STATE_STAGING:
+                    status_queue.put(msg)
+                
+                elif job_state == JOB_STATE_STAGED:
+                    status_queue.put(msg)
+                
+                elif job_state == JOB_STATE_DOWNLOADING:
+                    status_queue.put(msg)
 
-                elif job_state == JOB_STATE_PROCESSING:
+                elif job_state == JOB_STATE_PREPROCESSING:
+                    status_queue.put(msg)
+                
+                elif job_state == JOB_STATE_IMAGING:
+                    status_queue.put(msg)
+                
+                elif job_state == JOB_STATE_DELIVERING:
                     status_queue.put(msg)
 
                 elif job_state == JOB_STATE_READY_FOR_DOWNLOAD:
@@ -443,11 +466,6 @@ def notify_func(
                     download_queue.put(item)
 
                 elif job_state == JOB_STATE_ERROR:
-                    result_queue.put(Result(job_id, obs_id, msg, no_color_msg))
-
-                    _remove_submitted(submit_lock, submitted_jobs, job_id)
-
-                elif job_state == JOB_STATE_EXPIRED:
                     result_queue.put(Result(job_id, obs_id, msg, no_color_msg))
 
                     _remove_submitted(submit_lock, submitted_jobs, job_id)
@@ -520,12 +538,42 @@ def get_status_message(item, verbose, use_colour):
                 msg = "%s%s: %s" % (Fore.MAGENTA, "Queued", msg)
             else:
                 msg = "%s: %s" % ("Queued", msg)
-
-        elif job_state == JOB_STATE_PROCESSING:
+        
+        elif job_state == JOB_STATE_WAIT_CAL:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, "Processing", msg)
+                msg = "%s%s: %s" % (Fore.BLUE, "Waiting for calibration", msg)
             else:
-                msg = "%s: %s" % ("Processing", msg)
+                msg = "%s: %s" % ("Waiting for calibration", msg)
+
+        elif job_state == JOB_STATE_STAGING:
+            if use_colour:
+                msg = "%s%s: %s" % (Fore.BLUE, "Staging", msg)
+            else:
+                msg = "%s: %s" % ("Staging", msg)
+
+        elif job_state == JOB_STATE_STAGED:
+            if use_colour:
+                msg = "%s%s: %s" % (Fore.BLUE, "Staged", msg)
+            else:
+                msg = "%s: %s" % ("Staged", msg)            
+
+        elif job_state == JOB_STATE_DOWNLOADING:
+            if use_colour:
+                msg = "%s%s: %s" % (Fore.BLUE, "Retrieving Files from Archive", msg)
+            else:
+                msg = "%s: %s" % ("Retrieving Files from Archive", msg)     
+
+        elif job_state == JOB_STATE_PREPROCESSING:
+            if use_colour:
+                msg = "%s%s: %s" % (Fore.BLUE, "Preprocessing", msg)
+            else:
+                msg = "%s: %s" % ("Preprocessing", msg)
+
+        elif job_state == JOB_STATE_DELIVERING:
+            if use_colour:
+                msg = "%s%s: %s" % (Fore.YELLOW, "Delivering", msg)
+            else:
+                msg = "%s: %s" % ("Delivering", msg)
 
         elif job_state == JOB_STATE_READY_FOR_DOWNLOAD:
             # Get the products and file sizes
@@ -558,7 +606,7 @@ def get_status_message(item, verbose, use_colour):
             else:
                 if use_colour:
                     msg = "%s%s: %s %ssize: %s%s bytes" % (
-                        Fore.MAGENTA,
+                        Fore.GREEN,
                         "Ready for Download",
                         msg,
                         Fore.RESET,
@@ -576,9 +624,6 @@ def get_status_message(item, verbose, use_colour):
                 msg = "%s%s: %s %s" % (Fore.RED, "Error", error_text, msg)
             else:
                 msg = "%s: %s" % ("Error", error_text)
-
-        elif job_state == JOB_STATE_EXPIRED:
-            msg = "%s: %s" % ("Expired", msg)
 
         elif job_state == JOB_STATE_CANCELLED:
             if use_colour:
