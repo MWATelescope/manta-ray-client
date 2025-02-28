@@ -198,7 +198,7 @@ def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
                             submitted_jobs.append(job_id)
 
                 status_queue.put(
-                    "{0}Skipping:{1} {2} already queued, processing or"
+                    "{0}Skipping:{1} {2} already running or"
                     " complete.".format(Fore.MAGENTA, Fore.RESET, job_id)
                 )
         except Exception:
