@@ -162,7 +162,13 @@ optional arguments:
 Each job submitted will transition through the following states:
 
 - Queued: Job has been submitted and is waiting to be processed.
-- Processing: Job is being processed.
+- Waiting for calibration: New Calibration solution has been requested.
+- Staging: Files are being staged.
+- Staged: Files are staged from the Archive.
+- Retrieving Files from Archive: Files are being downloaded to HPC from the archive.
+- Preprocessing: Job is being processed by Birli.
+- Imaging: image product is being created.
+- Delivering: Files are being delivered to the destined location.
 - Ready for download: Job has completed- job product is ready for download.
 - Downloading: Job product is being downloaded.
 - Download Compete: Product download has been completed.
