@@ -202,11 +202,11 @@ Please note that some options are only available depending on the choice of prep
   - Output format.
   - `ms`: CASA measurement set.
   - `uvfits`: uvfits output.
-- `delivery:  <acacia || astro || scratch>`
+- `delivery:  <acacia || scratch || dug>`
   - Where you would like your data to be stored
   - `acacia (default)`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
-  - `astro`: Data will be left on the /astro file system at Pawsey in /astro/\<group>/asvo/<job_id>.
-  - `scratch`: Data will be left on the /scratch file system at Pawsey in /scratch/\<group>/asvo/<job_id>.
+  - `scratch`: Data will be left on the /scratch file system at Pawsey in /scratch/\<pawsey_group>/asvo/<job_id>.
+  - `dug`: Data will be transferred to the dug super computing fecility under /data/<dug_group>/asvo/<job_id>.
   - astro and scratch options are only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
 
 ### Flags / Optional Options
@@ -255,18 +255,18 @@ obs_id=1110103576, job_type=c, avg_time_res=8, avg_freq_res=40, flag_edge_width=
 - `download_type: <vis_meta || vis>`
   - `vis_meta`: download visibility metadata only (metafits and RFI flags).
   - `vis`: download raw visibility data sets and metadata (raw visibility files, metafits and RFI flags).
-- `delivery: <acacia || astro  || scratch>`
+- `delivery: <acacia || scratch || dug>`
   - `acacia`: Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
-  - `astro`: Data will be left on the /astro file system at Pawsey in /astro/\<group>/asvo/<job_id>.
   - `scratch`: Data will be left on the /scratch file system at Pawsey in /scratch/\<group>/asvo/<job_id>.
+  - `dug`: Data will be transferred to the dug super computing fecility under /data/<dug_group>/asvo/<job_id>.
   - astro and scratch options are only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
 
 #### Example lines in csv file
 
 ```csv
 obs_id=1110103576, job_type=d, download_type=vis, delivery=acacia
-obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=astro
 obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=scratch
+obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=dug
 ```
 
 ### Voltage Job Options
