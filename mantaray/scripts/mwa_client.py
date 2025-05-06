@@ -325,7 +325,7 @@ def download_func(
                         )
                         status_queue.put(msg)
                 else:
-                    # astro or scratch
+                    # dug or scratch
                     delivery_path = prod["path"]
 
                     if os.path.isdir(delivery_path):
@@ -368,7 +368,7 @@ def download_func(
                             shutil.copytree(delivery_path, output_path)
                             continue
                     else:
-                        # Folder does not exist on current system. Let te user know it's ready and exit
+                        # Folder does not exist on current system. Let the user know it's ready and exit
                         msg = (
                             "%sReady on /%s:%s Job id: %s%s%s file: %s%s%s"
                             % (
@@ -586,7 +586,7 @@ def get_status_message(item, verbose, use_colour):
                 total_size = total_size + file_size
 
             deliveryType = products[0]["type"]
-            if deliveryType == "astro" or deliveryType == "scratch":
+            if deliveryType == "dug" or deliveryType == "scratch":
                 if use_colour:
                     msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (
                         Fore.GREEN,
