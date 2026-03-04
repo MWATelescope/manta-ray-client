@@ -15,7 +15,7 @@ ENV PATH="/root/.local/bin:${PATH}"
 
 # --- Dependency caching layer ---
 # Copy only dependency files first (for caching)
-COPY asvo_server/pyproject.toml asvo_server/uv.lock ./
+COPY ./pyproject.toml ./uv.lock ./
 
 # Pre-install dependencies — this layer is cached unless pyproject/lock changes
 RUN uv sync --frozen --no-install-project
