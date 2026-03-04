@@ -1,25 +1,22 @@
 [project]
-name = "mantaray-client"
+name = "manta-ray-client"
 version = "2.0.1"
 description = "Python API and helper scripts to interact with the MWA ASVO."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = "==3.10.*"
 dependencies = [
     "colorama>=0.4.6",
     "requests>=2.18.3",
-    "setuptools<70.0.0",
     "urllib3>=1.26.8",
     "websocket-client>=1.8.0",
 ]
 
-# This points to the main function inside mantaray/scripts/mwa_client.py
 [project.scripts]
 mwa_client = "mantaray.scripts.mwa_client:main"
 
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.hatch.build.targets.wheel]
+packages = ["mantaray"]
 
-# This tells uv to treat the current directory as the package source
-[tool.uv]
-package = true
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

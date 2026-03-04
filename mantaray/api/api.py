@@ -11,19 +11,30 @@ except:
 
 from websocket import create_connection, WebSocketConnectionClosedException, WebSocketTimeoutException
 from requests.auth import HTTPBasicAuth
-import pkg_resources  # part of setuptools
+from importlib import metadata
 
 
 def get_api_version_number():
     # This is what we send to the server when we confirm version compatibility.
-    version = pkg_resources.require("mantaray-client")[0].version  # format major.minor.revision
+    version = ""
+    try:
+        version = metadata.version("manta-ray-client") # format major.minor.revision
+    except:
+        version = "unknown"
 
     version_parts = version.split(".")
     return "mantaray-clientv{0}.{1}".format(version_parts[0], version_parts[1])
 
 
 def get_version_number():
-    return pkg_resources.require("mantaray-client")[0].version
+    version = ""
+
+    try:
+        version = metadata.version("manta-ray-client") # format major.minor.revision
+    except:
+        version = "unknown"
+
+    return version
 
 
 def get_pretty_version_string():
