@@ -184,6 +184,23 @@ class Session(object):
                                verify=self.verify) as r:
             r.raise_for_status()
             return r.json()
+        
+    def submit_beamformer_job_direct(self, parameters):
+        """Submit a beamformer job to MWA ASVO"""
+
+        """
+        Args:
+            parameters (dict):
+                - obs_id
+                - delivery
+                - delivery_format
+                - allow_submit [optional]
+        """
+
+        url = "{0}://{1}:{2}/api/beamformer_job".format(self.protocol, self.host, self.port)
+        with self.session.post(url, parameters, verify=self.verify) as r:
+            r.raise_for_status()
+            return r.json()
 
     def get_jobs(self):
         url = "{0}://{1}:{2}/api/get_jobs".format(self.protocol, self.host, self.port)

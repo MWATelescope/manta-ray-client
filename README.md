@@ -33,6 +33,7 @@ There are three types of MWA ASVO jobs:
 
 - Conversion: Average, convert and download a visibility data set (and optionally apply calibration solutions).
 - Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
+- Beamformer: Download beamformer data products from MWAX_BEAMFORMER or MWAX_CORR_BF observations.
 - Voltage: Raw voltage data from VCS observations. This option is restricted to members of the mwavcs team who have a Pawsey account. If you are interested in getting access to VCS data, please [contact us](maito:asvo_support@mwatelescope.org)
 
 ## Installation Options
@@ -57,29 +58,26 @@ Then you may install natively on your computer OR install via Docker.
 
 #### Create a virtual environment
 
-```bash
-python3 -m venv env
-```
-
-or if you are _still_ using python2.7 you will need to use virtualenv (See [Setting up Python, Pip, and Virtualenv (external link)](http://timsherratt.org/digital-heritage-handbook/docs/python-pip-virtualenv/) for information on installing virtualenv)
+Pre-requisites:
+- Python3.10+
+- uv installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ```bash
-~$ virtualenv -p /usr/bin/python2.7 env
-```
-
-#### Activate the virtual environment
-
-```bash
-~$ source env/bin/activate
-(env)~$
+# Sync the project and create a virtual environment
+uv sync
 ```
 
 #### Install mwa_client and all required packages
 
 ```bash
 (env)~$ cd manta-ray-client
-(env)~/manta-ray-client$ pip3 install -r requirements.txt
-(env)~/manta-ray-client$ python3 setup.py install
+
+# Install the local package in 'editable' mode
+# This registers the metadata so the client can find its own version
+(env)~/manta-ray-client$ uv pip install -e .
+
+# 3. Verify the installation
+(env)~/manta-ray-client$ uv run mwa_client --help
 ```
 
 ### Installation using Docker
@@ -269,6 +267,30 @@ obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=scratch
 obs_id=1110105120, job_type=d, download_type=vis_meta, delivery=dug
 ```
 
+### Beamformer Job Options
+
+- `obs_id: <integer>`
+  - Observation ID
+- `job_type: b`
+  - Always 'b' for beamformer jobs.
+- `delivery: <acacia || scratch || dug>`
+  - `acacia` (default): Data will be delivered to Pawsey's Acacia system and you will receive a link to download a zip file containing the data.
+  - `scratch`: Data will be left on the /scratch file system at Pawsey in /scratch/\<pawsey_group\>/asvo/\<job_id\>.
+  - `dug`: Data will be transferred to the DUG super computing facility under /data/\<dug_group\>/asvo/\<job_id\>.
+  - scratch and dug options are only available for Pawsey users who are in one of the mwa science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
+- `delivery_format: <files || tar>` [optional]
+  - `files` (default): Download individual beamformer files.
+  - `tar`: Package all files into a tar archive.
+  - Only applicable for scratch and dug delivery types.
+
+#### Example lines in csv file
+
+```csv
+obs_id=1234567890, job_type=b, delivery=acacia
+obs_id=1234567891, job_type=b, delivery=scratch, delivery_format=tar
+obs_id=1234567892, job_type=b, delivery=dug, delivery_format=files
+```
+
 ### Voltage Job Options
 
 Note that voltage jobs will always be left on /astro or /scratch, and you will therefore need a Pawsey account to submit them. Please get in contact if you're interested in accessing VCS data.
@@ -326,3 +348,33 @@ with open("error.txt", "r") as f:
     for r in result_list:
         print("Job:{0} ObsId:{1} Result:{2}", r['job_id'], r['obs_id'], r['result'])
 ```
+
+### Common issues & solutions
+
+During the migration to `uv`, we identified a few legacy hurdles. If you encounter errors, check these solutions:
+
+1. `ModuleNotFoundError: No module named 'pkg_resources'`
+
+The MWA client relies on an older part of `setuptools` called `pkg_resources`. Modern Python environments (especially 3.12+) do not include this by default.
+
+- **Fix**: Ensure `setuptools` is in your `dependencies` list. Note that setuptools versions **70.0.0 and above** removed certain legacy features. We recommend pinning:
+
+```bash
+uv add "setuptools<70.0"
+```
+
+2. `The 'manta-ray-client' distribution was not found`
+
+This happens if the code is present but hasn't been "installed" as a package. The client uses `pkg_resources` to look up its own metadata at runtime.
+
+Fix: Run `uv pip install -e .` This creates the necessary `.egg-info` or `.dist-info` folders that allow the code to identify itself.
+
+3. `mwa_client: command not found`
+uv installs scripts into a local .venv/bin folder rather than your global path.
+
+Fix: Always prefix your commands with `uv run`:
+
+```bash
+uv run mwa_client -j <JOB_ID>
+```
+Alternatively, run source `.venv/bin/activate` to use the command directly.
