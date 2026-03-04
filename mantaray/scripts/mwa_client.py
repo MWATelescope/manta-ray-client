@@ -204,6 +204,11 @@ def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
                     "{0}Skipping:{1} {2} already running or"
                     " complete.".format(Fore.MAGENTA, Fore.RESET, job_id)
                 )
+
+            # is an HTTP error
+            if(error_code == 403) or (error_code == 401) or (error_code == 500):
+                status_queue.put("{0}Skipping:{1} job#{2} - {3}.".format(Fore.MAGENTA, Fore.RESET, job_number, error_text))
+
         except Exception:
             print(
                 "Error submitting job #{0} from csvfile. Details below:"

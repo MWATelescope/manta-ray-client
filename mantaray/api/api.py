@@ -193,7 +193,7 @@ class Session(object):
             parameters (dict):
                 - obs_id
                 - delivery
-                - delivery_format
+                - delivery_format [optional]
                 - allow_submit [optional]
         """
 
