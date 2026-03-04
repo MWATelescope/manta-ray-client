@@ -1,16 +1,32 @@
-FROM python:3.10
+FROM python:3.10-slim
 
-RUN apt-get -y update \
-    && apt-get -y install git \
-                  python3-pip \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && apt-get autoremove \
-    && apt-get clean
+# Install system packages (minimal)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . /manta-ray-client
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
 
-RUN cd manta-ray-client \
-    && pip3 install -r requirements.txt \
-    && python3 setup.py install 
+WORKDIR /app
 
-ENTRYPOINT /bin/bash
+# Copy only dependency files first (for caching)
+COPY ./pyproject.toml ./uv.lock ./
+
+# Install dependencies (This creates /app/.venv)
+RUN uv sync --frozen --no-install-project
+
+COPY . .
+
+# Final sync to install the 'mantaray' package and create the 'mwa_client' script
+# Using --no-editable ensures the script is baked in properly
+RUN uv sync --frozen --no-editable
+
+# Add the virtual environment to the PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Default to bash, but now mwa_client is in the PATH
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["mwa_client"]
