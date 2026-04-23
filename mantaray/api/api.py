@@ -212,6 +212,38 @@ class Session(object):
         with self.session.post(url, parameters, verify=self.verify) as r:
             r.raise_for_status()
             return r.json()
+        
+    def submit_imaging_job_direct(self, parameters):
+        """
+        Args:
+            parameters(dict):
+                - obs_id
+                - delivery string ['acacia', 'scratch', 'dug'] (optional. default = 'acacia')
+                - delivery_format: string ['files', 'tar'] (optional. default = 'files')
+                - avg_freq_res float (optional)
+                - flag_edge_width float (optional)
+                - apply_di_cal boolean (optional. default=true)
+                - input: string ['ms'] (optional. default='ms'. note: 'uvfits' not supported)
+                - image_size: int [512, 1024, 2048, 3072, 4096,v8192] (optional. default=3072)
+                - pixel_scale float (optional. default = 20.0)
+                - weighting: string ['normal', 'uniform', 'briggs']
+                - robust: float [-2.0 - 2.0] (optional. default=-0.5)
+                - clean_iterations: int [0 - 100000] (optional. default=100000. note: wsclean -nitter param)
+                - clean_threshold: float (optional. default=0.001)
+                - auto_threshold: float (optional. default=0.5)
+                - phase_center: string ['phase', 'custom'] (optional. default=phase)
+                - custom_ra: float (optional)
+                - custom_dec: float (optional)
+                - apply_primary_beam: boolean (optional. default=true)
+                - nwlayers: int (optional. default=128)
+                - multiscale: boolean (optional. default=true)
+                - input_mode: string ['raw', 'processed'] (optional. default=raw)
+        """
+
+        url = "{0}://{1}:{2}/api/imaging_job".format(self.protocol, self.host, self.port)
+        with self.session.post(url, parameters, verify=self.verify) as r:
+            r.raise_for_status()
+            return r.json()
 
     def get_jobs(self):
         url = "{0}://{1}:{2}/api/get_jobs".format(self.protocol, self.host, self.port)
