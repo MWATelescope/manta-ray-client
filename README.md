@@ -312,9 +312,10 @@ obs_id=1323776840, job_type=v, offset=0, duration=1200
 
 ### Imaging Job Options
 
-Imaging jobs generate calibrated sky images from MWA visibility data using the wsclean imager. The workflow includes:
+Imaging jobs generate calibrated sky images from MWA visibility data using the [WSClean](https://wsclean.readthedocs.io/en/latest/index.html) imager. For detailed information about WSClean and the meaning of its parameters, please refer to the [WSClean documentation](https://wsclean.readthedocs.io/en/latest/index.html). The workflow includes:
+
 1. **Staging**: Raw visibility files are retrieved from the archive
-2. **Preprocessing** (if `input_mode=raw`): Calibration and averaging using Birli
+2. **Preprocessing**: Calibration and averaging using Birli
 3. **Imaging**: wsclean generates sky images with CLEAN deconvolution
 4. **Delivery**: FITS images (and optionally all intermediate products) are delivered
 
@@ -372,9 +373,6 @@ Imaging jobs generate calibrated sky images from MWA visibility data using the w
 
 #### Input/Output Options
 
-- `input_mode: <raw || processed>` [optional, default: raw]
-  - `raw`: Process raw visibility files (gpubox files) through Birli preprocessing, then image.
-  - `processed`: Image pre-converted measurement sets (requires prior conversion job).
 - `output_mode: <fits || all_fits || all_files>` [optional, default: fits]
   - `fits`: Deliver only the final restored FITS image.
   - `all_fits`: Deliver all FITS products (restored, residual, model, PSF).
@@ -384,8 +382,6 @@ Imaging jobs generate calibrated sky images from MWA visibility data using the w
   - `tar`: Packaged tar archive (recommended for imaging jobs)
 
 #### Preprocessing Parameters (for input_mode=raw)
-
-When `input_mode=raw`, these conversion parameters apply before imaging:
 
 - `avg_time_res: <decimal>` [optional]
   - Average N seconds of time steps together before imaging.
@@ -403,17 +399,6 @@ When `input_mode=raw`, these conversion parameters apply before imaging:
   - Recommended: true for imaging jobs.
   - See: [MWA ASVO Calibration Option](https://mwatelescope.atlassian.net/wiki/spaces/MP/pages/24972245/MWA+ASVO+Calibration+Option)
 
-#### Preprocessing Flags (for input_mode=raw)
-
-Birli preprocessing flags (set to `true` to enable, omit or set to `false` to disable):
-
-- `no_rfi=true` Do not perform RFI detection.
-- `no_geometric_delay=true` Disable geometric corrections.
-- `no_cable_delay=true` Disable cable length corrections.
-- `no_digital_gains=true` Do not correct for digital gains.
-- `no_passband_gains=true` Apply unity passband (no passband corrections).
-- `no_flag_dc=true` Do not flag the DC channel of each coarse channel.
-
 #### Phase Center Options
 
 - `phase_center: <phase || custom>` [optional, default: phase]
@@ -429,10 +414,6 @@ Birli preprocessing flags (set to `true` to enable, omit or set to `false` to di
 - `apply_primary_beam: <true || false>` [optional, default: true]
   - Apply MWA primary beam correction.
   - Recommended: true for accurate flux measurements.
-- `input: <ms || uvfits>` [optional, default: ms]
-  - Input visibility format for preprocessing.
-  - `ms`: CASA measurement set (recommended)
-  - `uvfits`: UVFITS format
 
 #### Example lines in csv file
 
@@ -475,6 +456,10 @@ Imaging jobs require correlator mode observations. The following modes are **not
 - MWAX_BEAMFORMER, MWAX_CORR_BF (beamformer modes)
 
 For these observations, use the appropriate job type (voltage or beamformer).
+
+#### Citation requirements
+
+If you use images generated from MWA ASVO in a publication, you must cite WSClean as per the [Citing WSClean](https://wsclean.readthedocs.io/en/latest/citing_wsclean.html) page, and acknowledge MWA data and tools as described on the MWATelescope Confluence page: [Acknowledging MWA Data and Tools in Publications](https://mwatelescope.atlassian.net/wiki/spaces/MP/pages/24970509/Acknowledging+MWA+Data+and+Tools+in+Publications).
 
 ### Understanding and using the error file output
 
