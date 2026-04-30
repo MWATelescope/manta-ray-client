@@ -374,14 +374,14 @@ Imaging jobs generate calibrated sky images from MWA visibility data using the [
 #### Input/Output Options
 
 - `output_mode: <fits || all_fits || all_files>` [optional, default: fits]
-  - `fits`: Deliver only the final restored FITS image.
+  - `fits`: Deliver only the final FITS image.
   - `all_fits`: Deliver all FITS products (restored, residual, model, PSF).
   - `all_files`: Deliver all files including measurement set and wsclean working files.
 - `delivery_format: <files || tar>` [optional, default: tar]
   - `files`: Individual files
   - `tar`: Packaged tar archive (recommended for imaging jobs)
 
-#### Preprocessing Parameters (for input_mode=raw)
+#### Preprocessing Parameters
 
 - `avg_time_res: <decimal>` [optional]
   - Average N seconds of time steps together before imaging.
@@ -429,17 +429,12 @@ obs_id=1234567890, job_type=i, image_size=4096, pixel_scale=15, weighting=unifor
 
 **Imaging with preprocessing and calibration:**
 ```csv
-obs_id=1234567890, job_type=i, input_mode=raw, avg_time_res=8, avg_freq_res=80, apply_di_cal=true, image_size=3072, pixel_scale=20, weighting=briggs, robust=-0.5, delivery=acacia, output_mode=all_fits
+obs_id=1234567890, job_type=i, avg_time_res=8, avg_freq_res=80, apply_di_cal=true, image_size=3072, pixel_scale=20, weighting=briggs, robust=-0.5, delivery=acacia, output_mode=all_fits
 ```
 
 **Custom phase center:**
 ```csv
 obs_id=1234567890, job_type=i, phase_center=custom, custom_ra=123.45, custom_dec=-20.5, image_size=2048, pixel_scale=25, delivery=acacia
-```
-
-**Imaging pre-converted data:** *(coming soon)*
-```csv
-obs_id=1234567890, job_type=i, input_mode=processed, image_size=3072, pixel_scale=20, weighting=briggs, robust=0.0, multiscale=true, delivery=dug, delivery_format=tar
 ```
 
 #### Resource Estimates
