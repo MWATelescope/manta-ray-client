@@ -17,9 +17,7 @@ Please read [this wiki article](https://mwatelescope.atlassian.net/wiki/spaces/M
 ---
 
 - Supported Python versions:
-  - Python 3.10
-  - Python 3.9
-  - Python 3.8
+  - Python 3.10+
 
 ## mwa_client
 
@@ -29,12 +27,13 @@ mwa_client is a helper script which provides the following functions:
 - Monitor the status of your jobs
 - Download your completed jobs
 
-There are three types of MWA ASVO jobs:
+There are five types of MWA ASVO jobs:
 
 - Conversion: Average, convert and download a visibility data set (and optionally apply calibration solutions).
 - Download: Package and download a raw visibility data set. (This is recommended for advanced users, as the raw visibility files are in an MWA-specific format and require conversion and calibration).
 - Beamformer: Download beamformer data products from MWAX_BEAMFORMER or MWAX_CORR_BF observations.
 - Voltage: Raw voltage data from VCS observations. This option is restricted to members of the mwavcs team who have a Pawsey account. If you are interested in getting access to VCS data, please [contact us](maito:asvo_support@mwatelescope.org)
+- Imaging: Generate calibrated sky images from visibility data using wsclean. Can process raw visibility data (with preprocessing) or pre-converted measurement sets (coming soon).
 
 ## Installation Options
 
@@ -309,6 +308,153 @@ Note that voltage jobs will always be left on /astro or /scratch, and you will t
 ```csv
 obs_id=1323776840, job_type=v, offset=0, duration=1200
 ```
+
+
+### Imaging Job Options
+
+Imaging jobs generate calibrated sky images from MWA visibility data using the [WSClean](https://wsclean.readthedocs.io/en/latest/index.html) imager. For detailed information about WSClean and the meaning of its parameters, please refer to the [WSClean documentation](https://wsclean.readthedocs.io/en/latest/index.html). The workflow includes:
+
+1. **Staging**: Raw visibility files are retrieved from the archive
+2. **Preprocessing**: Calibration and averaging using Birli
+3. **Imaging**: wsclean generates sky images with CLEAN deconvolution
+4. **Delivery**: FITS images (and optionally all intermediate products) are delivered
+
+#### Required Parameters
+
+- `obs_id: <integer>`
+  - Observation ID
+- `job_type: i`
+  - Always 'i' for imaging jobs.
+- `delivery: <acacia || scratch || dug>`
+  - `acacia` (default): Data will be delivered to Pawsey's Acacia system and you will receive a link to download the image files.
+  - `scratch`: Data will be left on the /scratch file system at Pawsey in /scratch/\<pawsey_group\>/asvo/\<job_id\>.
+  - `dug`: Data will be transferred to the DUG super computing facility under /data/\<dug_group\>/asvo/\<job_id\>.
+  - scratch and dug options are only available for Pawsey users who are in one of the MWA science groups (mwasci, mwavcs, mwaeor, mwaops). Please contact support if you would like to use this option.
+
+#### Image Parameters
+
+- `image_size: <512 || 1024 || 2048 || 3072 || 4096 || 8192>` [optional, default: 3072]
+  - Image dimensions in pixels (square images). Powers of 2 optimize FFT performance.
+  - Typical: 3072 pixels (covers ~51° × 51° at 20" pixels, ~60 arcmin at default MWA resolution)
+- `pixel_scale: <10.0 - 120.0>` [optional, default: 20.0]
+  - Pixel size in arcseconds. MWA resolution at 150 MHz is ~2 arcminutes.
+  - Smaller values = higher resolution but slower imaging and larger memory requirements.
+  - Typical range: 15-30 arcseconds.
+- `weighting: <natural || uniform || briggs>` [optional, default: briggs]
+  - Visibility weighting scheme:
+    - `natural`: Maximum sensitivity, lower resolution
+    - `uniform`: Maximum resolution, lower sensitivity
+    - `briggs`: Compromise controlled by robust parameter (recommended)
+- `robust: <-2.0 to 2.0>` [optional, default: -0.5]
+  - Briggs robust parameter (only used if `weighting=briggs`).
+  - -2 ≈ uniform (high resolution), +2 ≈ natural (high sensitivity)
+  - Typical: -0.5 to 0.0
+
+#### CLEAN Deconvolution Parameters
+
+- `clean_iterations: <0 - 1000000>` [optional, default: 100000]
+  - Maximum number of CLEAN iterations.
+  - 0 = dirty image only (no deconvolution)
+  - Typical: 10,000 - 500,000 depending on field complexity
+- `clean_threshold: <0.0 - 10.0>` [optional, default: 0.001]
+  - Flux threshold in Jy below which CLEAN stops.
+  - Typical: 0.0001 - 0.01 Jy for faint source imaging
+- `auto_threshold: <0.1 - 5.0>` [optional, default: 0.5]
+  - Auto-threshold factor in units of RMS noise.
+  - CLEAN stops when residuals reach `auto_threshold × RMS`.
+  - Typical: 0.5 (stop at 0.5× noise level)
+- `nwlayers: <32 - 512>` [optional, default: 128]
+  - Number of w-layers for w-stacking (wide-field imaging correction).
+  - More layers = better accuracy but slower imaging.
+  - Typical: 128. Increase for very wide fields or high frequencies.
+- `multiscale: <true || false>` [optional, default: true]
+  - Enable multiscale CLEAN for extended source structure.
+  - Recommended: true for most science cases.
+
+#### Input/Output Options
+
+- `output_mode: <fits || all_fits || all_files>` [optional, default: fits]
+  - `fits`: Deliver only the final FITS image.
+  - `all_fits`: Deliver all FITS products (restored, residual, model, PSF).
+  - `all_files`: Deliver all files including measurement set and wsclean working files.
+- `delivery_format: <files || tar>` [optional, default: tar]
+  - `files`: Individual files
+  - `tar`: Packaged tar archive (recommended for imaging jobs)
+
+#### Preprocessing Parameters
+
+- `avg_time_res: <decimal>` [optional]
+  - Average N seconds of time steps together before imaging.
+  - Must be ≥ observation time resolution and an integer multiple of it.
+- `avg_freq_res: <integer>` [optional]
+  - Average N kHz of fine channels together before imaging.
+  - Must be ≥ observation frequency resolution and an integer multiple of it.
+  - Maximum: 1280 kHz.
+- `flag_edge_width: <integer>` [optional, default: 80]
+  - Flag N kHz at edges of each coarse channel.
+  - Set to 0 to disable edge flagging.
+  - Must be integer multiple of observation frequency resolution.
+- `apply_di_cal: <true || false>` [optional, default: true]
+  - Apply direction-independent calibration solution if available.
+  - Recommended: true for imaging jobs.
+  - See: [MWA ASVO Calibration Option](https://mwatelescope.atlassian.net/wiki/spaces/MP/pages/24972245/MWA+ASVO+Calibration+Option)
+
+#### Phase Center Options
+
+- `phase_center: <phase || custom>` [optional, default: phase]
+  - `phase`: Use observation's phase center (recommended)
+  - `custom`: Specify custom RA/Dec (requires `custom_ra` and `custom_dec`)
+- `custom_ra: <0.0 - 359.999999>` [required if phase_center=custom]
+  - Right ascension in decimal degrees (ICRS J2000.0)
+- `custom_dec: <-90.0 - 90.0>` [required if phase_center=custom]
+  - Declination in decimal degrees (ICRS J2000.0)
+
+#### Advanced Options
+
+- `apply_primary_beam: <true || false>` [optional, default: true]
+  - Apply MWA primary beam correction.
+  - Recommended: true for accurate flux measurements.
+
+#### Example lines in csv file
+
+**Basic imaging (raw data with defaults):**
+```csv
+obs_id=1234567890, job_type=i, delivery=acacia
+```
+
+**High-resolution imaging with custom parameters:**
+```csv
+obs_id=1234567890, job_type=i, image_size=4096, pixel_scale=15, weighting=uniform, clean_iterations=500000, clean_threshold=0.0005, nwlayers=256, delivery=scratch
+```
+
+**Imaging with preprocessing and calibration:**
+```csv
+obs_id=1234567890, job_type=i, avg_time_res=8, avg_freq_res=80, apply_di_cal=true, image_size=3072, pixel_scale=20, weighting=briggs, robust=-0.5, delivery=acacia, output_mode=all_fits
+```
+
+**Custom phase center:**
+```csv
+obs_id=1234567890, job_type=i, phase_center=custom, custom_ra=123.45, custom_dec=-20.5, image_size=2048, pixel_scale=25, delivery=acacia
+```
+
+#### Resource Estimates
+
+Imaging jobs automatically estimate resource requirements:
+- **Memory**: Scales with image size² and data volume. 3072px images typically require 100-200 GB.
+- **Walltime**: Varies from 2-12 hours depending on data size, image size, and CLEAN iterations.
+- Jobs exceeding 350 GB memory or 24 hours walltime will be rejected with an error message.
+
+#### Observation Requirements
+
+Imaging jobs require correlator mode observations. The following modes are **not** supported:
+- VOLTAGE_START, VOLTAGE_BUFFER, MWAX_VCS (voltage capture modes)
+- MWAX_BEAMFORMER, MWAX_CORR_BF (beamformer modes)
+
+For these observations, use the appropriate job type (voltage or beamformer).
+
+#### Citation requirements
+
+If you use images generated from MWA ASVO in a publication, you must cite WSClean as per the [Citing WSClean](https://wsclean.readthedocs.io/en/latest/citing_wsclean.html) page, and acknowledge MWA data and tools as described on the MWATelescope Confluence page: [Acknowledging MWA Data and Tools in Publications](https://mwatelescope.atlassian.net/wiki/spaces/MP/pages/24970509/Acknowledging+MWA+Data+and+Tools+in+Publications).
 
 ### Understanding and using the error file output
 

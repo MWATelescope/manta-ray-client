@@ -39,6 +39,7 @@ JOB_TYPE_VALUES = {
     3: "download_voltage",  # not implemented
     4: "cancel job",
     5: "beamformer", # avoid breaking changes by adding job as index 5
+    6: "imaging",
 }
 
 
@@ -126,6 +127,10 @@ def parse_row(row, allow_resubmit):
                     job_type = "submit_voltage_job_direct"
                 elif val == "b":
                     job_type = "submit_beamformer_job_direct"
+                elif val == "i":
+                    job_type = "submit_imaging_job_direct"
+                elif val == "p":
+                    job_type = "submit_imaging_job_processed"
                 else:
                     raise ParseException("unknown job_type")
             else:
