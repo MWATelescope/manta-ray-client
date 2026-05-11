@@ -7,7 +7,7 @@ requires-python = "==3.10.*"
 dependencies = [
     "colorama>=0.4.6",
     "requests>=2.18.3",
-    "urllib3>=1.26.8",
+    "urllib3>=2.7.0",
     "websocket-client>=1.8.0",
 ]
 
