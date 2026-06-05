@@ -68,7 +68,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "colorama", specifier = ">=0.4.6" },
-    { name = "requests", specifier = ">=2.18.3" },
+    { name = "requests", specifier = "==2.33.0" },
     { name = "urllib3", specifier = ">=2.7.0" },
     { name = "websocket-client", specifier = ">=1.8.0" },
 ]
