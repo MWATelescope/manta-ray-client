@@ -3,11 +3,11 @@ name = "manta-ray-client"
 version = "2.0.1"
 description = "Python API and helper scripts to interact with the MWA ASVO."
 readme = "README.md"
-requires-python = "==3.10.*"
+requires-python = "==3.11.*"
 dependencies = [
     "colorama>=0.4.6",
     "requests>=2.18.3",
-    "urllib3>=1.26.8",
+    "urllib3>=2.7.0",
     "websocket-client>=1.8.0",
 ]
 
