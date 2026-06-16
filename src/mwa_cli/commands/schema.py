@@ -8,12 +8,12 @@ import logging
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
 
-from mwa_cli.client.schema import check_schema_version, fetch_openapi_schema
+from mwa_cli.client.schema import fetch_openapi_schema
 from mwa_cli.config import Config, load_cached_schema, save_schema
 
 
@@ -21,11 +21,12 @@ app = typer.Typer()
 console = Console()
 logger = logging.getLogger(__name__)
 
+
 def run_codegen(schema: dict[str, Any], output_path: Path) -> bool:
     """Run datamodel-code-generator to create Pydantic models"""
 
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False, enconding="utf-8"
+        mode="w", suffix=".json", delete=False, encoding="utf-8"
     ) as tmp:
         json.dump(schema, tmp, indent=2)
         tmp_path = Path(tmp.name)
@@ -33,25 +34,24 @@ def run_codegen(schema: dict[str, Any], output_path: Path) -> bool:
     try:
         cmd = [
             "datamodel-codegen",
-            "--input", str(tmp_path),
-            "--output", str(output_path),
-            "--input-file-type", "openapi",
-            "--output-model-type", "pydantic_v2.BaseModel",
+            "--input",
+            str(tmp_path),
+            "--output",
+            str(output_path),
+            "--input-file-type",
+            "openapi",
+            "--output-model-type",
+            "pydantic_v2.BaseModel",
             "--use-standard-collections",
             "--use-schema-description",
             "--use-field-description",
             "--field-constraints",
-            "--snake-case-field"
+            "--snake-case-field",
         ]
 
         logger.debug(f"Running: {' '.join(cmd)}")
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=False
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
         if result.returncode != 0:
             logger.error(f"Code generation failed: {result.stderr}")
@@ -62,23 +62,23 @@ def run_codegen(schema: dict[str, Any], output_path: Path) -> bool:
     finally:
         tmp_path.unlink(missing_ok=True)
 
+
 @app.command(name="update")
 async def update_schema_command(
-    api_url: str | None = typer.Option(
-        None,
-        "--api-url",
-        help="API base URL (default: from config or https://asvo.mwatelescope.org)"
-    ),
-    force: bool = typer.Option(
-        False,
-        "--force",
-        help="Force fetch even if cache exists"
-    )
+    api_url: Annotated[
+        str | None,
+        typer.Option(
+            None,
+            "--api-url",
+            help="API base URL (default: from config or https://asvo.mwatelescope.org)",
+        ),
+    ],
+    force: bool = typer.Option(False, "--force", help="Force fetch even if cache exists"),
 ) -> bool:
     """Update OpenAPI schema and regenerate Pydantic models"""
 
     if api_url is None:
-        api_url = Config.get_openapi_url(),
+        api_url = (Config.get_openapi_url(),)
 
     console.print(f"[bold]Fetching OpenAPI schema from:[/bold] {api_url}")
 
@@ -97,7 +97,7 @@ async def update_schema_command(
             save_schema(schema)
 
         info = schema.get("info", {})
-        console.print(f"[green]✓[/green] Schema: {info.get("title", "Unknown")}")
+        console.print(f"[green]✓[/green] Schema: {info.get('title', 'Unknown')}")
         console.print(f"[green]✓[/green] Version: {info.get('version', 'Unknown')}")
 
         console.print("\n[bold]Generating Pydantic models...[/bold]")
@@ -124,6 +124,7 @@ async def update_schema_command(
         logger.exception("Schema update failed")
         return False
 
+
 @app.command(name="info")
 def schema_info() -> None:
     """Show information about cached OpenAPI schema"""
@@ -142,7 +143,7 @@ def schema_info() -> None:
     console.print(f"Description: {info.get('description', 'N/A')}")
 
     # count endpoints
-    paths = schema.get('paths', {})
+    paths = schema.get("paths", {})
     console.print(f"\nEndpoints: {len(paths)}")
 
     # count schemas

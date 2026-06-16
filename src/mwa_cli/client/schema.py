@@ -11,6 +11,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+
 async def fetch_openapi_schema(api_url: str, timeout: float = 30.0) -> dict[str, Any]:
     """Fetch OpenAPI schema from FastAPI server"""
 
@@ -40,7 +41,7 @@ async def fetch_openapi_schema(api_url: str, timeout: float = 30.0) -> dict[str,
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error fetching schema: {e.response.status_code}")
             raise
-        except httpx.ConnectError as e:
+        except httpx.ConnectError:
             logger.error(f"Connection error: Cannot reach {schema_url}")
             raise
         except httpx.TimeoutException:
@@ -52,6 +53,7 @@ async def fetch_openapi_schema(api_url: str, timeout: float = 30.0) -> dict[str,
         except Exception as e:
             logger.error(f"An unexpected error occurred while fetching schema: {e}")
             raise
+
 
 async def check_schema_version(api_url: str) -> str:
     """Check API version from OpenAPI schema"""

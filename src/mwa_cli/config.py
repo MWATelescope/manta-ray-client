@@ -12,6 +12,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+
 class Config:
     """Configuration manager for mwa-cli"""
 
@@ -32,11 +33,12 @@ class Config:
 
         return Config.get_cache_dir() / "openapi.json"
 
-@staticmethod
-def get_schema_cache_path() -> Path:
-    """Get path to cached OpenAPI schema file """
+    @staticmethod
+    def get_schema_cache_path() -> Path:
+        """Get path to cached OpenAPI schema file"""
 
-    return Config.get_cache_dir() / "openapi.json"
+        return Config.get_cache_dir() / "openapi.json"
+
 
 def save_schema(schema: dict[str, Any]) -> Path:
     """Save OpenAPI schema to local cache"""
@@ -47,9 +49,10 @@ def save_schema(schema: dict[str, Any]) -> Path:
     with open(cache_path, "w", encoding="utf-8") as f:
         json.dump(schema, f, indent=2)
 
-    logger.debug(f"Schema saved successfully ({cache_path.stat().str_size} bytes)")
+    logger.debug(f"Schema saved successfully ({cache_path.stat().st_size} bytes)")
 
     return cache_path
+
 
 def load_cached_schema() -> dict[str, Any] | None:
     """Load openAPI schema from local cache"""
@@ -70,8 +73,9 @@ def load_cached_schema() -> dict[str, Any] | None:
         logger.error(f"Failed to load cached schema: {e}")
         return None
 
+
 def is_schema_cache_valid() -> bool:
     """Check if cached schema exists and is valid JSON"""
 
-    schema = load_cached_schema()
+    schema = Config.load_cached_schema()
     return schema is not None and schema == "openapi"

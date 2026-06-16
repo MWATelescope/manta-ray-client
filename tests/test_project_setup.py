@@ -4,7 +4,6 @@ Validates that the project structure, entry points and basic commands work corre
 """
 
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -23,6 +22,7 @@ def test_cli_entry_point_exists():
     assert result.returncode == 0
     assert "version" in result.stdout.lower() or "mwa-cli" in result.stdout.lower()
 
+
 def test_version_command_returns_correct_version():
     """Test version command returns version from pyproject.toml"""
 
@@ -32,6 +32,7 @@ def test_version_command_returns_correct_version():
     assert result.exit_code == 0
     # version should be format: X.Y.Z
     assert any(char.isdigit() for char in result.stdout)
+
 
 def test_help_command_displays_all_groups():
     """Test help command shows all command groups (auth, jobs, search)"""
@@ -45,18 +46,20 @@ def test_help_command_displays_all_groups():
     assert "jobs" in result.stdout.lower()
     assert "search" in result.stdout.lower()
 
+
 def test_no_circular_imports():
     """Test that importing main module doesn't cause circular imports"""
 
     try:
         from mwa_cli import main  # noqa: F401, I001
-        from mwa_cli import config # noqa: F401
-        from mwa_cli import auth_store # noqa: F401
-        from mwa_cli import utils # noqa: F401
+        from mwa_cli import config  # noqa: F401
+        from mwa_cli import auth_store  # noqa: F401
+        from mwa_cli import utils  # noqa: F401
 
         assert True
     except ImportError as e:
         pytest.fail(f"Circular import detected: {e}")
+
 
 def test_config_dir_created_on_first_run():
     """Test that ./mwa-asvo dir is created on first import"""
@@ -69,6 +72,7 @@ def test_config_dir_created_on_first_run():
     # assert config_dir.exists()
     # assert config_dir.is_dir()
     assert True
+
 
 def test_project_structure_exists():
     """Test that expected project structure is in place"""
@@ -87,6 +91,7 @@ def test_project_structure_exists():
     assert (src_dir / "auth_store.py").exists()
     assert (src_dir / "utils.py").exists()
 
+
 def test_verbose_flag_works():
     """Test that --verbose flag is recognized"""
 
@@ -94,6 +99,7 @@ def test_verbose_flag_works():
     result = runner.invoke(app, ["--verbose", "--help"])
 
     assert result.exit_code == 0
+
 
 def test_output_format_flag_works():
     """Test that --output flag accepts valid formats"""

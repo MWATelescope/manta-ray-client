@@ -32,10 +32,12 @@ app = typer.Typer(
 console = Console()
 state = GlobalState()
 
+
 def version_callback(value: bool) -> None:
     if value:
         console.print(f"[bold]mwa-cli[/bold] version {__version__}")
         raise typer.Exit(0)
+
 
 @app.callback()
 def main(
@@ -82,19 +84,24 @@ def register_commands() -> None:
         app.add_typer(auth.app, name="auth", help="Authentication commands")
         app.add_typer(jobs.app, name="jobs", help="Job management commands")
         app.add_typer(search.app, name="search", help="observation search commands")
-        app.add_typer(schema.app, name="schema", help="Generate pydantic types based on openapi schemas")
+        app.add_typer(
+            schema.app, name="schema", help="Generate pydantic types based on openapi schemas"
+        )
 
     except ImportError:
         # todo
         pass
 
+
 # entry point for console script
+
 
 def app_entry() -> None:
     """Entry point for CLI"""
 
     register_commands()
     app()
+
 
 if __name__ == "__main__":
     app_entry()
