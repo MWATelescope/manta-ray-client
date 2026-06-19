@@ -8,7 +8,7 @@ import logging
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -65,20 +65,17 @@ def run_codegen(schema: dict[str, Any], output_path: Path) -> bool:
 
 @app.command(name="update")
 async def update_schema_command(
-    api_url: Annotated[
-        str | None,
-        typer.Option(
-            None,
-            "--api-url",
-            help="API base URL (default: from config or https://asvo.mwatelescope.org)",
-        ),
-    ],
+    api_url: str | None = typer.Option(
+        None,
+        "--api-url",
+        help="API base URL (default: from config or https://asvo.mwatelescope.org)",
+    ),
     force: bool = typer.Option(False, "--force", help="Force fetch even if cache exists"),
 ) -> bool:
     """Update OpenAPI schema and regenerate Pydantic models"""
 
     if api_url is None:
-        api_url = (Config.get_openapi_url(),)
+        api_url = Config.get_openapi_url()
 
     console.print(f"[bold]Fetching OpenAPI schema from:[/bold] {api_url}")
 
@@ -97,8 +94,8 @@ async def update_schema_command(
             save_schema(schema)
 
         info = schema.get("info", {})
-        console.print(f"[green]✓[/green] Schema: {info.get('title', 'Unknown')}")
-        console.print(f"[green]✓[/green] Version: {info.get('version', 'Unknown')}")
+        console.print(f"[green][+[/green] Schema: {info.get('title', 'Unknown')}")
+        console.print(f"[green]+[/green] Version: {info.get('version', 'Unknown')}")
 
         console.print("\n[bold]Generating Pydantic models...[/bold]")
 
@@ -106,12 +103,12 @@ async def update_schema_command(
         success = run_codegen(schema, models_path)
 
         if success:
-            console.print(f"[green]✓[/green] Models generated: {models_path}")
+            console.print(f"[green]+[/green] Models generated: {models_path}")
 
             if models_path.exists():
                 content = models_path.read_text()
                 class_count = content.count("class ")
-                console.print(f"[green]✓[/green] Generated {class_count} model classes")
+                console.print(f"[green]+[/green] Generated {class_count} model classes")
 
             console.print("\n[bold green]Schema update completed![/bold green]")
             return True

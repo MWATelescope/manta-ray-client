@@ -1,0 +1,51 @@
+# Pre-commit hooks for Manta Ray Client
+# See https://pre-commit.com for more information
+# Install: pre-commit install
+# Update: pre-commit autoupdate
+
+repos:
+  # Ruff for linting and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.18
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+        files: ./src/
+      # Run the formatter
+      - id: ruff-format
+        files: ./src/
+
+  # MyPy for typechecking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.1.0
+    hooks:
+      - id: mypy
+        exclude: ^(mantaray/|tests/)
+        additional_dependencies:
+          - rich>=13.7.0
+          - types-requests
+          - pydantic
+          - typer
+          - httpx
+        args: [--config-file=mypy.ini]
+
+   # General quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: mixed-line-ending
+
+  # Python specific checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-use-type-annotations

@@ -41,7 +41,6 @@ def test_help_command_displays_all_groups():
 
     assert result.returncode == 0
 
-    print(f"DEBUG {result.stdout}")
     assert "auth" in result.stdout.lower()
     assert "jobs" in result.stdout.lower()
     assert "search" in result.stdout.lower()
