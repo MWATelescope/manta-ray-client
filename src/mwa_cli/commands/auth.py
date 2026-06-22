@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 async def do_login(api_key: str, api_url: str = "https://asvo.mwatelescope.org") -> dict[str, Any]:
     """Perform login request to ASVO server"""
 
-    login_url = f"{api_url.rstrip('/')}/api/auth/api_login"
+    login_url = f"{api_url.rstrip('/')}/api/v2/api_login"
     logger.info(f"Logging in to {login_url}")
 
     async with httpx.AsyncClient(verify=Config.verify_ssl()) as client:
@@ -71,7 +71,7 @@ async def do_login(api_key: str, api_url: str = "https://asvo.mwatelescope.org")
 @app.command(name="login")
 def login(
     api_url: str | None = typer.Option(None, "--api-url", help="Base API URL"),
-    api_key: str | None = typer.Option(None, "--api_key", help="API key for authentication"),
+    api_key: str | None = typer.Option(None, "--api-key", help="API key for authentication"),
 ) -> None:
     """Login to MWA ASVO"""
 
