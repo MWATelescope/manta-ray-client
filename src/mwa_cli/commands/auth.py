@@ -92,7 +92,7 @@ def login(
         api_url = "https://asvo.mwatelescope.org"
 
     try:
-        console.print(f"[dim]Authenticating {api_key}...[/dim]")
+        console.print(f"[dim]Authenticating with {api_url}...[/dim]")
         result = asyncio.run(do_login(api_key, api_url))
 
         token_store = TokenStore()
