@@ -53,7 +53,7 @@ class Config:
     def get_cache_dir() -> Path:
         """Get cache directory (same as config for now)"""
 
-        return Config.get_config_dir() / "openapi.json"
+        return Config.get_config_dir()
 
     @staticmethod
     def get_schema_cache_path() -> Path:

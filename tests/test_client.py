@@ -78,7 +78,7 @@ async def test_automatic_token_refresh_on_401():
 
         client = BaseClient(base_url="https://test.example.com")
 
-        with patch("httpx.AsyncClient.request") as mock_get:
+        with patch("httpx.AsyncClient.request") as mock_post:
             # first GET returns 401
             response_401 = MagicMock()
             response_401.status_code = 401
@@ -93,21 +93,20 @@ async def test_automatic_token_refresh_on_401():
                 "access_token": "new_access_token",
                 "refresh_token": "new_refresh_token"
             }
-            mock_get.return_value = refresh_response
 
             # return GET success
             response_200 = MagicMock()
             response_200.status_code = 200
             response_200.json.return_value = {"status": "ok"}
-            mock_get.side_effect = [response_401, response_200]
+
+            mock_post.side_effect = [response_401, refresh_response, response_200]
 
             async with client:
-                with pytest.raises(APIError):
-                    result = await client.get("/test")
+                await client.post("/test")
 
-                    # verify refresh was called
-                    mock_get.assert_called()
-                    assert mock_get.call_count == 2 # original + retry
+                # verify refresh was called
+                mock_post.assert_called()
+                assert mock_post.call_count == 3 # original + retry
 
 @pytest.mark.asyncio
 async def test_retry_logic():

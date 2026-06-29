@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 async def fetch_openapi_schema(api_url: str, timeout: float = 30.0) -> dict[str, Any]:
     """Fetch OpenAPI schema from FastAPI server"""
 
-    schema_url = f"{api_url.rstrip('/')}/api/v2/openapi.json"
+    schema_url = f"{api_url.rstrip('/')}/openapi.json"
     logger.info(f"Fetching OpenAPI schema from {schema_url}")
 
     async with httpx.AsyncClient(timeout=timeout, verify=Config.verify_ssl()) as client:

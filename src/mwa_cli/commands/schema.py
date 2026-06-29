@@ -3,6 +3,7 @@ Schema management commands
 Fetch OpenAPI schemas and generate Pydantic models
 """
 
+import asyncio
 import json
 import logging
 import subprocess
@@ -64,7 +65,7 @@ def run_codegen(schema: dict[str, Any], output_path: Path) -> bool:
 
 
 @app.command(name="update")
-async def update_schema_command(
+def update_schema_command(
     api_url: str | None = typer.Option(
         None,
         "--api-url",
@@ -87,10 +88,10 @@ async def update_schema_command(
                 console.print("[yellow]Cached schema found. Use --force to fetch latest[/yellow]")
                 schema = cached
             else:
-                schema = await fetch_openapi_schema(api_url)
+                schema = asyncio.run(fetch_openapi_schema(api_url))
                 save_schema(schema)
         else:
-            schema = await fetch_openapi_schema(api_url)
+            schema = asyncio.run(fetch_openapi_schema(api_url))
             save_schema(schema)
 
         info = schema.get("info", {})
