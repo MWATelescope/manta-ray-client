@@ -6,7 +6,7 @@ Handles JWT authentication with MWA ASVO API
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -29,8 +29,9 @@ async def do_login(api_key: str, api_url: str = "https://asvo.mwatelescope.org")
 
     login_url = f"{api_url.rstrip('/')}/api/v2/api_login"
     logger.info(f"Logging in to {login_url}")
+    verify = Config.verify_ssl()
 
-    async with httpx.AsyncClient(verify=Config.verify_ssl()) as client:
+    async with httpx.AsyncClient(verify=verify) as client:
         response = await client.post(
             login_url,
             json={"login": Config.get_cli_version(), "password": api_key},
@@ -51,7 +52,7 @@ async def do_login(api_key: str, api_url: str = "https://asvo.mwatelescope.org")
         except Exception:
             user_data = {"id": 0, "login": "n/a", "email": ""}
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         access_expiry = now + timedelta(minutes=15)
         refresh_expiry = now + timedelta(days=7)
 
@@ -62,7 +63,7 @@ async def do_login(api_key: str, api_url: str = "https://asvo.mwatelescope.org")
             "refresh_expires_at": refresh_expiry.isoformat() + "Z",
             "user": {
                 "id": user_data.get("id", 0),
-                "login": user_data.get("login", api_key),
+                "login": user_data.get("login", "unknown"),
                 "email": user_data.get("email", ""),
             },
         }

@@ -95,7 +95,7 @@ def update_schema_command(
             save_schema(schema)
 
         info = schema.get("info", {})
-        console.print(f"[green][+[/green] Schema: {info.get('title', 'Unknown')}")
+        console.print(f"[green]+[/green] Schema: {info.get('title', 'Unknown')}")
         console.print(f"[green]+[/green] Version: {info.get('version', 'Unknown')}")
 
         console.print("\n[bold]Generating Pydantic models...[/bold]")

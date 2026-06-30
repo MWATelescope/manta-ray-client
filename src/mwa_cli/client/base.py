@@ -5,7 +5,7 @@ Handles automatic token injection, refresh, retries and error parsing
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import TracebackType
 from typing import Any
 
@@ -19,6 +19,7 @@ from mwa_cli.client.errors import APIError, parse_api_error
 logger = logging.getLogger(__name__)
 console = Console()
 
+
 class BaseClient:
     """Async client with authentication and retry logic"""
 
@@ -27,7 +28,8 @@ class BaseClient:
         base_url: str,
         timeout: float = 30.0,
         max_retries: int = 3,
-        verbose: bool = False
+        verbose: bool = False,
+        verify: bool = True,
     ):
         """Initialize HTTP client"""
 
@@ -35,6 +37,7 @@ class BaseClient:
         self.timeout = timeout
         self.max_retries = max_retries
         self.verbose = verbose
+        self.verify = verify
 
         self.token_store = TokenStore()
         self._client: httpx.AsyncClient | None = None
@@ -45,17 +48,18 @@ class BaseClient:
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             timeout=httpx.Timeout(self.timeout),
-            follow_redirects=True
+            follow_redirects=True,
+            verify=self.verify,
         )
 
         return self
 
     async def __aexit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_val: BaseException | None,
-            exc_tb: TracebackType | None
-        ) -> None:
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Context manager exit"""
 
         if self._client:
@@ -71,7 +75,7 @@ class BaseClient:
         if token_data.is_access_token_expired():
             logger.debug("Access token expired, will be refreshed on request")
 
-        return {"access_token": token_data.access_token}
+        return {"mwa_access_token": token_data.access_token}
 
     async def _refresh_tokens(self) -> bool:
         """
@@ -87,27 +91,26 @@ class BaseClient:
 
         try:
             logger.info("Refreshing access token...")
-            refresh_url = f"{self.base_url}/api/auth/refresh"
+            refresh_url = f"{self.base_url}/api/v2/refresh"
 
             if not self._client:
                 logger.error("Unable to refresh tokens: base httpx client not found")
                 return False
 
             response = await self._client.post(
-                refresh_url,
-                cookies={"refresh_token": token_data.refresh_token}
+                refresh_url, cookies={"mwa_refresh_token": token_data.refresh_token}
             )
 
             # extract new tokens from response cookies
-            new_access = response.cookies.get("access_token")
-            new_refresh = response.cookies.get("refresh_token")
+            new_access = response.cookies.get("mwa_access_token")
+            new_refresh = response.cookies.get("mwa_refresh_token")
 
             if not new_access:
                 logger.error("Refresh response missing access_token")
                 return False
 
             # Update stored tokens
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             updated_data = TokenData(
                 access_token=new_access,
@@ -116,7 +119,7 @@ class BaseClient:
                 refresh_expires_at=token_data.refresh_expires_at,
                 user_id=token_data.user_id,
                 user_login=token_data.user_login,
-                user_email=token_data.user_email
+                user_email=token_data.user_email,
             )
 
             self.token_store.save(updated_data)
@@ -139,7 +142,11 @@ class BaseClient:
         cookies.update(self._get_auth_cookies())
         kwargs["cookies"] = cookies
 
-        url = path if path.startswith("http") else f"{self.base_url}{path}"
+        url = (
+            path
+            if path.startswith("http") or path.startswith("https")
+            else f"{self.base_url}{path}"
+        )
 
         if self.verbose:
             logger.info(f"{method} {url}")
@@ -174,7 +181,7 @@ class BaseClient:
                         raise APIError(
                             status_code=401,
                             message="Authentication expired. Please run 'mwa-cli auth login'",
-                            error_code=None
+                            error_code=None,
                         )
 
                 # raise for other HTTP errors
@@ -192,14 +199,14 @@ class BaseClient:
 
                 if attempt < self.max_retries - 1:
                     # exponential backoff
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                     continue
                 else:
                     raise APIError(
                         status_code=0,
                         message=f"Connection failed after {self.max_retries} attempts: {e}",
                         error_code=None,
-                        field_errors=None
+                        field_errors=None,
                     ) from e
 
         # should not reach here
@@ -207,16 +214,12 @@ class BaseClient:
             raise last_error
 
         raise APIError(
-            status_code=0,
-            message="An unknown error occurred",
-            error_code=None,
-            field_errors=None
+            status_code=0, message="An unknown error occurred", error_code=None, field_errors=None
         )
 
     async def get(self, path: str, **kwargs: Any) -> httpx.Response:
         """GET request"""
         return await self._request("GET", path, **kwargs)
-
 
     async def post(self, path: str, **kwargs: Any) -> httpx.Response:
         """POST request"""

@@ -57,7 +57,7 @@ async def test_base_client_injects_tokens(tmp_path):
 
             call_kwargs = mock_get.call_args[1]
             assert "cookies" in call_kwargs
-            assert call_kwargs["cookies"]["access_token"] == "test_access_token"
+            assert call_kwargs["cookies"]["mwa_access_token"] == "test_access_token"
 
 @pytest.mark.asyncio
 async def test_automatic_token_refresh_on_401():
@@ -90,8 +90,8 @@ async def test_automatic_token_refresh_on_401():
             refresh_response = MagicMock()
             refresh_response.status_code = 200
             refresh_response.cookies = {
-                "access_token": "new_access_token",
-                "refresh_token": "new_refresh_token"
+                "mwa_access_token": "new_access_token",
+                "mwa_refresh_token": "new_refresh_token"
             }
 
             # return GET success
