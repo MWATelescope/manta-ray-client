@@ -16,15 +16,19 @@ class JobsClient:
     def __init__(self, base_client: BaseClient):
         self.client = base_client
 
-    async def list_jobs(self, params: JobsByUserRequest) -> Any:
+    async def list_jobs(self, params: JobsByUserRequest) -> dict[str, Any]:
         """List user jobs with filters"""
 
         request_params = params.model_dump(mode="json")
         response = await self.client.post("/api/v2/get_jobs", json=request_params)
-        return response.json()
+        result: dict[str, Any] = response.json()
 
-    async def get_job(self, job_id: int) -> Any:
+        return result
+
+    async def get_job(self, job_id: int) -> dict[str, Any]:
         """Get job info based on the provided id"""
 
         response = await self.client.post(f"/api/v2/jobs/{job_id}")
-        return response.json()
+        result: dict[str, Any] = response.json()
+
+        return result

@@ -3,16 +3,14 @@ Tests for JWT authentication and token management.
 Validates login, token storage, security and logout flows
 """
 
-import json
-import os
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
 from mwa_cli.auth_store import TokenData, TokenStore
 from mwa_cli.commands.auth import app
+
 
 @pytest.fixture
 def tmp_token_file(tmp_path):

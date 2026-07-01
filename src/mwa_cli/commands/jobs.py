@@ -14,7 +14,7 @@ from mwa_cli.client.base import BaseClient
 from mwa_cli.client.errors import APIError
 from mwa_cli.client.jobs import JobsClient
 from mwa_cli.config import Config
-from mwa_cli.models.generated import JobsByUserRequest
+from mwa_cli.models.generated import JobDetailResponse, JobsByUserRequest, JobsByUserResponse
 
 
 app = typer.Typer()
@@ -32,7 +32,7 @@ JOB_TYPES = [
 ]
 
 
-async def do_list(api_url: str, params: JobsByUserRequest) -> Any:
+async def do_list(api_url: str, params: JobsByUserRequest) -> dict[str, Any]:
     """Get user's jobs list"""
 
     async with BaseClient(api_url, verify=Config().verify_ssl()) as base_client:
@@ -40,7 +40,9 @@ async def do_list(api_url: str, params: JobsByUserRequest) -> Any:
         return await jobs_client.list_jobs(params)
 
 
-async def do_show(api_url: str, job_id: int = typer.Argument(..., help="Job Id")) -> Any:
+async def do_show(
+    api_url: str, job_id: int = typer.Argument(..., help="Job Id")
+) -> dict[str, Any]:
     """Show detailed info about a job"""
 
     async with BaseClient(api_url, verify=Config().verify_ssl()) as base_client:
@@ -81,7 +83,7 @@ def list_jobs(
             job_state=state, job_type=mapped_type, limit=limit, offset=offset
         )
         result = asyncio.run(do_list(api_url, params))
-        jobs = result
+        jobs = result["jobs"]
 
         if not jobs:
             console.print("[yellow]No jobs found[/yellow]")

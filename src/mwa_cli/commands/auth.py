@@ -45,8 +45,8 @@ async def do_login(api_key: str, api_url: str = "https://asvo.mwatelescope.org")
 
         if not access_token or not refresh_token:
             payload = response.json()
-            access_token = payload['access_token']
-            refresh_token = payload['refresh_token']
+            access_token = payload["access_token"]
+            refresh_token = payload["refresh_token"]
 
             if not access_token or not refresh_token:
                 raise ValueError("Login succeeded but tokens not found in response cookies")

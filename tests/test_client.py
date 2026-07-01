@@ -3,14 +3,14 @@ Tests for HTTP client with authentication middleware
 Validates client initialization, auth injection, token refresh, and error parsing
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 
 from mwa_cli.auth_store import TokenData, TokenStore
 from mwa_cli.client.base import BaseClient
-from mwa_cli.client.errors import APIError, parse_api_error
+from mwa_cli.client.errors import parse_api_error
 
 
 @pytest.mark.asyncio

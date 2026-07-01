@@ -105,6 +105,11 @@ class BaseClient:
             new_access = response.cookies.get("mwa_access_token")
             new_refresh = response.cookies.get("mwa_refresh_token")
 
+            if not new_access or not new_refresh:
+                payload = response.json()
+                new_access = payload.get("access_token")
+                new_refresh = payload.get("refresh_token")
+
             if not new_access:
                 logger.error("Refresh response missing access_token")
                 return False

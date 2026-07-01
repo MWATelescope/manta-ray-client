@@ -3,16 +3,19 @@ from unittest.mock import patch
 import pytest
 from typer.testing import CliRunner
 
-from mwa_cli.commands.jobs import app
 from mwa_cli.client.errors import APIError
+from mwa_cli.commands.jobs import app
 
 
 @pytest.fixture
 def mock_jobs_list():
-    return [
-        {"id": 12345, "job_type": 0, "job_state": "queued", "created": "2026-06-30T12:00:00Z"},
-        {"id": 12346, "job_type": 1, "job_state": "processing", "created": "2026-06-30T12:05:00Z"}
-    ]
+    return {
+        "jobs": [
+            {"id": 12345, "job_type": 0, "job_state": "queued", "created": "2026-06-30T12:00:00Z"},
+            {"id": 12346, "job_type": 1, "job_state": "processing", "created": "2026-06-30T12:05:00Z"}
+        ],
+        "total_count": 2
+    }
 
 @pytest.fixture
 def mock_job_details():
