@@ -14,7 +14,7 @@ from mwa_cli.client.base import BaseClient
 from mwa_cli.client.errors import APIError
 from mwa_cli.client.jobs import JobsClient
 from mwa_cli.config import Config
-from mwa_cli.models.generated import JobDetailResponse, JobsByUserRequest, JobsByUserResponse
+from mwa_cli.models.generated import JobsByUserRequest
 
 
 app = typer.Typer()

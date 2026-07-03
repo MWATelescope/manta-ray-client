@@ -28,7 +28,7 @@ class JobsClient:
     async def get_job(self, job_id: int) -> dict[str, Any]:
         """Get job info based on the provided id"""
 
-        response = await self.client.post(f"/api/v2/jobs/{job_id}")
+        response = await self.client.get(f"/api/v2/jobs/{job_id}")
         result: dict[str, Any] = response.json()
 
         return result
