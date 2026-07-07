@@ -363,15 +363,15 @@ Imaging jobs generate calibrated sky images from MWA visibility data using the [
   - If your threshold is reached before this max value, WSClean will automatically stop early anyway.
 - `auto_mask <1 - 10>` [optional. default: 3]
   - Noise threshold (σ) above which a clean mask is automatically made.
-- `mgain <0.6 - 0.95>` [optional. default: 0.8 ] 
+- `mgain <0.6 - 0.95>` [optional. default: 0.8 ]
   - Fraction of flux subtracted per major loop cycle.
 - `uvw_min <0.0 - 30.0>` [optional. default: 75l]
   - Filters out very short baselines (useful to suppress massive diffuse noise).
-- `uvw_max` [optional, default: None] 
+- `uvw_max` [optional, default: None]
   - Filters out long baselines. Leave blank to use the array's full resolution.
-- `join_polarizations` [optional, default: false] 
+- `join_polarizations` [optional, default: false]
   - Performs a joint peak-finding operation across linear instrumental polarizations (XX, YY) to ensure accurate primary beam correction later
-- `channels_out <1 - 24>` [optional, default: 4] 
+- `channels_out <1 - 24>` [optional, default: 4]
   - Number of frequency chunks to split the band into for an image cube.
 - `clean_threshold: <0.0 - 10.0>` [optional, default: 0.001]
   - Flux threshold in Jy below which CLEAN stops.

@@ -1,4 +1,4 @@
 requests>=2.18.3
 websocket_client
-colorama
 urllib3>=2.7.0
+rich>=13.7.0

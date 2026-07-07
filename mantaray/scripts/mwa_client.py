@@ -1,35 +1,41 @@
-import os
-import ssl
 import csv
-import sys
-import requests
-import shutil
 import json
+import os
+import shutil
+import ssl
+import sys
 from urllib.parse import urlparse
 
-try:
-    from queue import Queue, Empty
-except:
-    from Queue import Queue, Empty
+import requests
 
-from threading import Thread, RLock
+
+try:
+    from queue import Empty, Queue
+except Exception:
+    from Queue import Empty, Queue
+
 import argparse
-from colorama import init, Fore, Style
+from threading import RLock, Thread
+
+from rich.console import Console
+
 from mantaray.api import Notify, Session, get_pretty_version_string
 
 
+console = Console()
+
 # Constants for job states
-JOB_STATE_QUEUED = 'queued'
-JOB_STATE_WAIT_CAL = 'waitcal'
-JOB_STATE_STAGING = 'staging'
-JOB_STATE_STAGED = 'staged'
-JOB_STATE_DOWNLOADING = 'downloading'
-JOB_STATE_PREPROCESSING = 'preprocessing'
-JOB_STATE_IMAGING = 'imaging'
-JOB_STATE_DELIVERING = 'delivering'
-JOB_STATE_READY_FOR_DOWNLOAD = 'completed'
-JOB_STATE_ERROR = 'error'
-JOB_STATE_CANCELLED = 'cancelled'
+JOB_STATE_QUEUED = "queued"
+JOB_STATE_WAIT_CAL = "waitcal"
+JOB_STATE_STAGING = "staging"
+JOB_STATE_STAGED = "staged"
+JOB_STATE_DOWNLOADING = "downloading"
+JOB_STATE_PREPROCESSING = "preprocessing"
+JOB_STATE_IMAGING = "imaging"
+JOB_STATE_DELIVERING = "delivering"
+JOB_STATE_READY_FOR_DOWNLOAD = "completed"
+JOB_STATE_ERROR = "error"
+JOB_STATE_CANCELLED = "cancelled"
 
 # Constants descriptions for job types
 JOB_TYPE_VALUES = {
@@ -38,12 +44,12 @@ JOB_TYPE_VALUES = {
     2: "download metadata",
     3: "download_voltage",  # not implemented
     4: "cancel job",
-    5: "beamformer", # avoid breaking changes by adding job as index 5
+    5: "beamformer",  # avoid breaking changes by adding job as index 5
     6: "imaging",
 }
 
 
-class Result(object):
+class Result:
     def __init__(
         self,
         result_job_id,
@@ -54,9 +60,7 @@ class Result(object):
         self._job_id = result_job_id
         self._obs_id = result_obs_id
         self._colour_message = str(result_colour_message)
-        self._no_colour_message = "".join(
-            str(result_no_colour_message)
-        )  # Remove any newlines
+        self._no_colour_message = "".join(str(result_no_colour_message))  # Remove any newlines
 
     @property
     def job_id(self):
@@ -77,7 +81,7 @@ class Result(object):
 
 class ParseException(Exception):
     def __init__(self, *arg):
-        super(ParseException, self).__init__(*arg)
+        super().__init__(*arg)
         self._line_num = None
         self._row = None
 
@@ -154,7 +158,7 @@ def parse_row(row, allow_resubmit):
 
 def parse_csv(filename, allow_resubmit):
     result = []
-    with open(filename, "r") as csvfile:
+    with open(filename) as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             if not row:
@@ -194,11 +198,7 @@ def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
             job_id = response_dict.get("job_id")
 
             if error_code == 0:
-                status_queue.put(
-                    "{0}Skipping:{1} job #{2} - {3}.".format(
-                        Fore.MAGENTA, Fore.RESET, job_number, error_text
-                    )
-                )
+                status_queue.put(f"[magenta]Skipping[/magenta] job #{job_number} - {error_text}")
             if error_code == 2:
                 for e in existing_jobs:
                     if e["row"]["id"] == job_id:
@@ -206,19 +206,15 @@ def submit_jobs(session, jobs_to_submit, status_queue, download_queue):
                             submitted_jobs.append(job_id)
 
                 status_queue.put(
-                    "{0}Skipping:{1} {2} already running or"
-                    " complete.".format(Fore.MAGENTA, Fore.RESET, job_id)
+                    f"[magenta]Skipping:[/magenta] {job_id} already running or complete"
                 )
 
             # is an HTTP error
-            if(error_code == 403) or (error_code == 401) or (error_code == 500):
-                status_queue.put("{0}Skipping:{1} job#{2} - {3}.".format(Fore.MAGENTA, Fore.RESET, job_number, error_text))
+            if (error_code == 403) or (error_code == 401) or (error_code == 500):
+                status_queue.put(f"[magenta]Skipping:[/magenta]job #{job_number} - {error_text}")
 
         except Exception:
-            print(
-                "Error submitting job #{0} from csvfile. Details below:"
-                .format(job_number)
-            )
+            print(f"Error submitting job #{job_number} from csvfile. Details below:")
             raise
         else:
             new_job_id = job_response["job_id"]
@@ -278,63 +274,36 @@ def download_func(
                     if os.path.isfile(file_path):
                         if os.path.getsize(file_path) == file_size:
                             msg = (
-                                "%sDownload complete:%s Job id: %s%s%s file:"
-                                " %s%s%s server-sha1: %s%s%s"
-                                % (
-                                    Fore.GREEN,
-                                    Fore.RESET,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    job_id,
-                                    Fore.RESET,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    file_path,
-                                    Fore.RESET,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    file_sha1,
-                                    Fore.RESET,
-                                )
+                                "[green]Downloda copmlete:[/green] ",
+                                f"Job Id: [bold white]{job_id}[/bold white] ",
+                                f"file: [bold white]{file_path}[/bold white] ",
+                                f"server-sha1: [bold white]{file_sha1}[/bold white]",
                             )
                             status_queue.put(msg)
                             continue
 
                     msg = (
-                        "%sDownloading:%s Job id: %s%s%s file: %s%s%s size:"
-                        " %s%s%s bytes"
-                        % (
-                            Fore.MAGENTA,
-                            Fore.RESET,
-                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                            job_id,
-                            Fore.RESET,
-                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                            file_url,
-                            Fore.RESET,
-                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                            file_size,
-                            Fore.RESET,
-                        )
+                        "[magenta]Downloading:[/magenta] ",
+                        f"Job Id: [bold white]{job_id}[/bold white] ",
+                        f"file: [bold white]{file_url}[/bold white] ",
+                        f"size: [bold white]{file_size}[/bold_white]",
                     )
                     status_queue.put(msg)
 
                     for attempt in range(3):
                         try:
-                            session.download_file_product(
-                                job_id, file_url, file_path
-                            )
+                            session.download_file_product(job_id, file_url, file_path)
                         except (
                             Exception,
                             requests.exceptions.ConnectionError,
-                        ) as e:
+                        ):
                             pass
                         else:
                             break
                     else:
-                        msg = "%sDownload Failed:%s Job id: %s%s%s" % (
-                            Fore.RED,
-                            Fore.RESET,
-                            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                            job_id,
-                            Fore.RESET,
+                        msg = (
+                            "[red]Download failed:[/red] ",
+                            f"Job Id: [bold white]{job_id}[/bold white]",
                         )
                         status_queue.put(msg)
                 else:
@@ -343,39 +312,21 @@ def download_func(
 
                     if os.path.isdir(delivery_path):
                         # Folder exists on current system
-                        output_path = os.path.join(
-                            output_dir, os.path.basename(delivery_path)
-                        )
+                        output_path = os.path.join(output_dir, os.path.basename(delivery_path))
                         if os.path.isdir(output_path):
                             # Folder has already been moved to output_dir
                             msg = (
-                                "%sDownload Complete:%s Job id: %s%s%s file:"
-                                " %s%s%s"
-                                % (
-                                    Fore.GREEN,
-                                    Fore.RESET,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    job_id,
-                                    Fore.RESET,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    output_path,
-                                    Fore.RESET,
-                                )
+                                "[green]Download complete:[/green] ",
+                                f"Job id: [bold white]{job_id}[/bold white] ",
+                                f"file: [bold white]{output_path}[/bold white]",
                             )
                             status_queue.put(msg)
                             continue
                         else:
                             # Folder has not been moved to output_dir yet
                             msg = (
-                                "%sCopying job to the directory:%s%s Job id: %s%s%s"
-                                % (
-                                    Fore.MAGENTA,
-                                    Fore.RESET,
-                                    output_path,
-                                    Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                    job_id,
-                                    Fore.RESET,
-                                )
+                                "[magenta]Copying job to the directory:[/magenta] ",
+                                f"{output_path}, Job id: [bold white]{job_id}[/bold white]",
                             )
                             status_queue.put(msg)
                             shutil.copytree(delivery_path, output_path)
@@ -383,18 +334,9 @@ def download_func(
                     else:
                         # Folder does not exist on current system. Let the user know it's ready and exit
                         msg = (
-                            "%sReady on /%s:%s Job id: %s%s%s file: %s%s%s"
-                            % (
-                                Fore.GREEN,
-                                delivery,
-                                Fore.RESET,
-                                Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                job_id,
-                                Fore.RESET,
-                                Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                                delivery_path,
-                                Fore.RESET,
-                            )
+                            f"[green]Read on /{delivery}[/green]: ",
+                            f"Job Id: [bold white]{job_id}[/bold white] ",
+                            f"file: [bold white]{delivery_path}[/bold white]",
                         )
                         status_queue.put(msg)
                         continue
@@ -406,13 +348,23 @@ def download_func(
         _remove_submitted(submit_lock, submitted_jobs, job_id)
 
 
+# def status_func(status_queue):
+#    while True:
+#        status = status_queue.get()
+#        if not status:
+#            break
+#
+#        print(status)
+#        sys.stdout.flush()
+
+
 def status_func(status_queue):
     while True:
         status = status_queue.get()
         if not status:
             break
 
-        print(status)
+        console.print(status)
         sys.stdout.flush()
 
 
@@ -449,28 +401,16 @@ def notify_func(
                 continue
 
             if job_id in submitted_jobs:
-                if job_state == JOB_STATE_QUEUED:
-                    status_queue.put(msg)
-                
-                elif job_state == JOB_STATE_WAIT_CAL:
-                    status_queue.put(msg)
-                
-                elif job_state == JOB_STATE_STAGING:
-                    status_queue.put(msg)
-                
-                elif job_state == JOB_STATE_STAGED:
-                    status_queue.put(msg)
-                
-                elif job_state == JOB_STATE_DOWNLOADING:
-                    status_queue.put(msg)
-
-                elif job_state == JOB_STATE_PREPROCESSING:
-                    status_queue.put(msg)
-                
-                elif job_state == JOB_STATE_IMAGING:
-                    status_queue.put(msg)
-                
-                elif job_state == JOB_STATE_DELIVERING:
+                if (
+                    job_state == JOB_STATE_QUEUED
+                    or job_state == JOB_STATE_WAIT_CAL
+                    or job_state == JOB_STATE_STAGING
+                    or job_state == JOB_STATE_STAGED
+                    or job_state == JOB_STATE_DOWNLOADING
+                    or job_state == JOB_STATE_PREPROCESSING
+                    or job_state == JOB_STATE_IMAGING
+                    or job_state == JOB_STATE_DELIVERING
+                ):
                     status_queue.put(msg)
 
                 elif job_state == JOB_STATE_READY_FOR_DOWNLOAD:
@@ -492,17 +432,10 @@ def notify_func(
 
 def get_job_summary(job_id, obs_id, job_type_desc, use_colour):
     if use_colour:
-        return "%sJob id: %s%s %sObs id: %s%s%s type: %s%s%s" % (
-            Fore.RESET,
-            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-            job_id,
-            Fore.RESET,
-            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-            obs_id,
-            Fore.RESET,
-            Fore.LIGHTWHITE_EX + Style.BRIGHT,
-            job_type_desc,
-            Fore.RESET,
+        return (
+            f"Job id: [bold white]{job_id}[/bold white] "
+            f"Obs id: [bold white]{obs_id}[/bold white] "
+            f"type: [bold white]{job_type_desc}[/bold white]"
         )
     else:
         return "Job id: %s Obs id: %s type: %s" % (
@@ -528,63 +461,57 @@ def get_status_message(item, verbose, use_colour):
 
     if verbose:
         if use_colour:
-            msg = msg + "%s typeid: %s%s%s params: %s%s%s" % (
-                Fore.RESET,
-                Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                job_type,
-                Fore.RESET,
-                Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                job_params,
-                Fore.RESET,
+            msg = msg + (
+                f"typeid: [bold white]{job_type}[/bold white] [bold white]{job_params}[/bold white]"
             )
         else:
             msg = msg + " typeid: %s params: %s" % (job_type, job_params)
 
     if action == "DELETE":
         if use_colour:
-            msg = "%s%s: %s" % (Fore.RED, "Deleted", msg)
+            msg = f"[red]Deleted[/red] {msg}"
         else:
             msg = "%s: %s" % ("Deleted", msg)
     else:
         if job_state == JOB_STATE_QUEUED:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.MAGENTA, "Queued", msg)
+                msg = f"[magenta]Queued:[/magenta] {msg}"
             else:
                 msg = "%s: %s" % ("Queued", msg)
-        
+
         elif job_state == JOB_STATE_WAIT_CAL:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, "Waiting for calibration", msg)
+                msg = f"[blue]Waiting for calibration:[/blue] {msg}"
             else:
                 msg = "%s: %s" % ("Waiting for calibration", msg)
 
         elif job_state == JOB_STATE_STAGING:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, "Staging", msg)
+                msg = f"[blue]Staging:[/blue] {msg}"
             else:
                 msg = "%s: %s" % ("Staging", msg)
 
         elif job_state == JOB_STATE_STAGED:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, "Staged", msg)
+                msg = f"[blue]Staged:[/blue] {msg}"
             else:
-                msg = "%s: %s" % ("Staged", msg)            
+                msg = "%s: %s" % ("Staged", msg)
 
         elif job_state == JOB_STATE_DOWNLOADING:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, "Retrieving Files from Archive", msg)
+                msg = f"[blue]Retrieving files from archive[/blue] {msg}"
             else:
-                msg = "%s: %s" % ("Retrieving Files from Archive", msg)     
+                msg = "%s: %s" % ("Retrieving Files from Archive", msg)
 
         elif job_state == JOB_STATE_PREPROCESSING:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.BLUE, "Preprocessing", msg)
+                msg = f"[blue]Preprocessing[/blue] {msg}"
             else:
                 msg = "%s: %s" % ("Preprocessing", msg)
 
         elif job_state == JOB_STATE_DELIVERING:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.YELLOW, "Delivering", msg)
+                msg = f"[yellow]Delivering[/yellow] {msg}"
             else:
                 msg = "%s: %s" % ("Delivering", msg)
 
@@ -601,14 +528,10 @@ def get_status_message(item, verbose, use_colour):
             deliveryType = products[0]["type"]
             if deliveryType == "dug" or deliveryType == "scratch":
                 if use_colour:
-                    msg = "%s%s: %s %spath: %s%s, size: %s bytes" % (
-                        Fore.GREEN,
-                        f"Ready on /{deliveryType}",
-                        msg,
-                        Fore.RESET,
-                        Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                        products[0]["path"],
-                        products[0]["size"],
+                    msg = (
+                        f"[green]Ready on /{deliveryType}:[/green] {msg} "
+                        f"path: [bold white]{products[0]['path']}[/bold white], "
+                        f"size: [bold white]{products[0]['size']} bytes[/bold white]"
                     )
                 else:
                     msg = "%s: path: %s, size: %s bytes" % (
@@ -618,13 +541,9 @@ def get_status_message(item, verbose, use_colour):
                     )
             else:
                 if use_colour:
-                    msg = "%s%s: %s %ssize: %s%s bytes" % (
-                        Fore.GREEN,
-                        "Ready for Download",
-                        msg,
-                        Fore.RESET,
-                        Fore.LIGHTWHITE_EX + Style.BRIGHT,
-                        total_size,
+                    msg = (
+                        f"[green]Ready for Download[/green]: {msg} "
+                        f"size: [bold white]{total_size}[/bold white]"
                     )
                 else:
                     msg = "%s: size: %s bytes" % (
@@ -634,13 +553,13 @@ def get_status_message(item, verbose, use_colour):
 
         elif job_state == JOB_STATE_ERROR:
             if use_colour:
-                msg = "%s%s: %s %s" % (Fore.RED, "Error", error_text, msg)
+                msg = f"[red]Error: {error_text}[/red] {msg}"
             else:
                 msg = "%s: %s" % ("Error", error_text)
 
         elif job_state == JOB_STATE_CANCELLED:
             if use_colour:
-                msg = "%s%s: %s" % (Fore.RED, "Cancelled", msg)
+                msg = f"[grey]Cancelled: {msg}[/grey]"
             else:
                 msg = "%s: %s" % ("Cancelled", msg)
 
@@ -661,9 +580,7 @@ def get_job_list(session):
 
     except Exception as e:
         # Error getting job list
-        raise Exception(
-            "Could not obtain jobs list from server: {0}".format(e)
-        )
+        raise Exception(f"Could not obtain jobs list from server: {e}")
 
 
 def get_jobs_status(session, status_queue, verbose):
@@ -678,9 +595,7 @@ def get_jobs_status(session, status_queue, verbose):
     return len(jobs)
 
 
-def enqueue_all_ready_to_download_jobs(
-    session, download_queue, status_queue, verbose
-):
+def enqueue_all_ready_to_download_jobs(session, download_queue, status_queue, verbose):
     submitted_jobs = []
     jobs = get_job_list(session)
 
@@ -698,9 +613,7 @@ def enqueue_all_ready_to_download_jobs(
     return submitted_jobs
 
 
-def check_job_is_downloadable_and_enqueue(
-    session, download_queue, result_queue, job_id
-):
+def check_job_is_downloadable_and_enqueue(session, download_queue, result_queue, job_id):
     submitted_jobs = []
     jobs = get_job_list(session)
     found_job = None
@@ -721,16 +634,12 @@ def check_job_is_downloadable_and_enqueue(
 
         if job_state != JOB_STATE_READY_FOR_DOWNLOAD:
             colour_msg = (
-                "{0}Error: Invalid job state- job not ready for"
-                " download{1}; {2}".format(
-                    Fore.RED,
-                    Fore.RESET,
-                    get_job_summary(job_id, obs_id, job_type_desc, True),
-                )
+                (
+                    ("[red]Error: Invalid job state- job not ready for download;[/red] ")
+                    + get_job_summary(job_id, obs_id, job_type_desc, True)
+                ),
             )
-            no_colour_msg = (
-                "Error: Invalid job state- job not ready for download"
-            )
+            no_colour_msg = "Error: Invalid job state- job not ready for download"
             result_queue.put(Result(job_id, obs_id, colour_msg, no_colour_msg))
 
             return []
@@ -743,12 +652,11 @@ def check_job_is_downloadable_and_enqueue(
     else:
         # not a valid job
         colour_msg = (
-            "{0}Error: Job Id {1} is not a valid job, has expired or is not"
-            " owned by you.{2}".format(Fore.RED, job_id, Fore.RESET)
+            f"[red]Error: Job Id {job_id} is not a valid job,"
+            f" has expired or is not owned by you.[/red] "
         )
         no_colour_msg = (
-            "Error: Job Id {0} is not a valid job, has expired or is not owned"
-            " by you.".format(job_id)
+            f"Error: Job Id {job_id} is not a valid job, has expired or is not owned by you."
         )
         result_queue.put(Result(job_id, "N/A", colour_msg, no_colour_msg))
 
@@ -762,8 +670,8 @@ class ParseDownloadOnly(argparse.Action):
         # Positive integer == specific job
         # all|ALL,etc      == all jobs, same as 0
         msg = (
-            "'{0}' is not valid for -w / --download-only. Try a Job Id, or"
-            " 'all' for all jobs.".format(values)
+            f"'{values}' is not valid for -w / --download-only. Try a Job Id, or"
+            " 'all' for all jobs."
         )
 
         try:
@@ -796,12 +704,10 @@ def mwa_client():
         " List all of your jobs and their status, then exit"
     )
     desc = (
-        "{0}\n==============================\n\nThe mwa_client is a"
+        f"{version_string}\n==============================\n\nThe mwa_client is a"
         " command-line tool for submitting, monitoring and \ndownloading jobs"
         " from the MWA ASVO (https://asvo.mwatelescope.org). \nPlease see"
-        " README.md for csv file format and other details.".format(
-            version_string
-        )
+        " README.md for csv file format and other details."
     )
 
     parser = argparse.ArgumentParser(
@@ -825,10 +731,7 @@ def mwa_client():
         "--list-only",
         action="store_true",
         dest="list_only",
-        help=(
-            "List the user's active job(s) and exit immediately (-s, -c & -d"
-            " are ignored)"
-        ),
+        help=("List the user's active job(s) and exit immediately (-s, -c & -d are ignored)"),
         default=False,
     )
 
@@ -844,13 +747,9 @@ def mwa_client():
         ),
     )
 
-    parser.add_argument(
-        "-c", "--csv", dest="csvfile", help="csv job file", metavar="FILE"
-    )
+    parser.add_argument("-c", "--csv", dest="csvfile", help="csv job file", metavar="FILE")
 
-    parser.add_argument(
-        "-d", "--dir", dest="outdir", help="download directory", metavar="DIR"
-    )
+    parser.add_argument("-d", "--dir", dest="outdir", help="download directory", metavar="DIR")
 
     parser.add_argument(
         "-e",
@@ -882,7 +781,7 @@ def mwa_client():
     # Figure out what mode we are running in, based on the command line args
     mode_submit_only = args.submit_only is True
     mode_list_only = args.list_only is True
-    mode_download_only = not (args.download_job_id is None)
+    mode_download_only = args.download_job_id is not None
     allow_resubmit = args.allow_resubmit
 
     # full mode is the default- submit, monitor, download
@@ -900,9 +799,7 @@ def mwa_client():
         outdir = args.outdir
 
         if not os.path.isdir(outdir):
-            raise Exception(
-                "Error: Output directory {0} is invalid.".format(outdir)
-            )
+            raise Exception(f"Error: Output directory {outdir} is invalid.")
 
     host = os.environ.get("MWA_ASVO_HOST", "asvo.mwatelescope.org")
     if not host:
@@ -970,16 +867,14 @@ def mwa_client():
 
     params = (https, host, port, api_key)
 
-    status_queue.put("Connecting to MWA ASVO ({0}:{1})...".format(host, port))
+    status_queue.put(f"Connecting to MWA ASVO ({host}:{port})...")
     session = Session.login(*params)
     status_queue.put("Connected to MWA ASVO")
     jobs_list = []
 
     # Take an action depending on command line options specified
     if mode_submit_only or mode_full:
-        jobs_list = submit_jobs(
-            session, jobs_to_submit, status_queue, download_queue
-        )
+        jobs_list = submit_jobs(session, jobs_to_submit, status_queue, download_queue)
 
     elif mode_list_only:
         job_count = get_jobs_status(session, status_queue, verbose)
@@ -1127,8 +1022,6 @@ def mwa_client():
 
 
 def main():
-    init(autoreset=True)
-
     try:
         mwa_client()
     except ParseException as e:
