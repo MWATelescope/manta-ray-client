@@ -3,6 +3,7 @@ Authentication commands: login, logout, status
 Handles JWT authentication with MWA ASVO API
 """
 
+import json
 import asyncio
 import logging
 import os
@@ -124,7 +125,11 @@ def login(
         if e.response.status_code == 401:
             console.print("[bold red]-[/bold red] Authentication failed: invalid credentials")
         else:
-            console.print(f"[bold red]-[/bold red] HTTP error: {e.response.status_code}")
+            if 'message' in e.response.text and 'suggestion' in e.response.text:
+                json_err = json.loads(e.response.text)
+                console.print(f"[bold red]-[/bold red] HTTP error {e.response.status_code} - {json_err['message']}: {json_err['suggestion']}")
+            else:
+                console.print(f"[bold red]-[/bold red] HTTP error {e.response.status_code} - {e.response.text}")
         raise typer.Exit(1)  # noqa: B904
     except httpx.ConnectError as e:
         console.print(f"[bold red]-[/bold red] Cannot connect to {api_url}")
