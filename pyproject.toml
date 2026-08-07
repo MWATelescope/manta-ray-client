@@ -1,6 +1,6 @@
 [project]
 name = "manta-ray-client"
-version = "2.0.1"
+version = "3.0.1"
 description = "Python CLI tool and helper scripts to interact with the MWA ASVO API."
 readme = "README.md"
 

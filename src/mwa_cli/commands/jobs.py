@@ -108,7 +108,9 @@ def list_jobs(
             if state_str == "cancelled":
                 state_display = f"[white]{state_str}[/white]"
 
-            table.add_row(str(job.get("id", "id")), job_type, state_display, job.get("created", ""))
+            job_job_type = job.get('job_type', '')
+
+            table.add_row(str(job.get("id", "id")), JOB_TYPES[job_job_type], state_display, job.get("created", ""))
 
         console.print(table)
 
